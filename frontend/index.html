@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LangGraph AI Travel & Booking Agent</title>
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            surface: {
+              900: '#0B0F19',
+              800: '#111827',
+              700: '#1F2937',
+              600: '#374151',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel for in-browser JSX parsing -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    body {
+      background-color: #090D16;
+      color: #F3F4F6;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.6);
+    }
+
+    /* Subtle Glassmorphism */
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-card {
+      background: rgba(31, 41, 55, 0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Glow effects */
+    .glow-indigo {
+      box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+    }
+    
+    .glow-emerald {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Pulse animation */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 3s infinite ease-in-out;
+    }
+
+    /* Perforated ticket styling */
+    .ticket-edge {
+      background-image: radial-gradient(circle at 0 50%, transparent 10px, #111827 11px),
+                        radial-gradient(circle at 100% 50%, transparent 10px, #111827 11px);
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+  <div id="root" class="h-full w-full flex flex-col"></div>
+
+  <!-- React Application Source -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // SVG Icons
+    const Icons = {
+      Plane: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+      ),
+      Search: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      ),
+      Ticket: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+        </svg>
+      ),
+      ShieldCheck: () => (
+        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ),
+      Send: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      ),
+      Refresh: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      ),
+      Sparkles: () => (
+        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        </svg>
+      ),
+      Copy: () => (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      ),
+      Check: () => (
+        <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+        </svg>
+      ),
+      Close: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ),
+      Bot: () => (
+        <svg className="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+      User: () => (
+        <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      )
+    };
+
+    // Component: Header
+    function Header({ threadId, onResetThread, onOpenBookings, bookingCount, serverStatus }) {
+      return (
+        <header className="glass-panel border-b border-slate-800/80 px-6 py-3.5 flex items-center justify-between z-20 shrink-0">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center glow-indigo">
+              <Icons.Sparkles />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="font-display font-bold text-lg text-white tracking-tight">LangGraph Travel Agent</h1>
+                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+                  AI Agent
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 hidden sm:inline-block">
+                  Chain: model | parser
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 flex items-center space-x-2 mt-0.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Server-Secured Auth</span>
+                <span className="text-slate-600">•</span>
+                <span>LCEL Chain Pipeline</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            {/* Thread Info Badge */}
+            <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300">
+              <span className="text-slate-500">Thread:</span>
+              <span className="font-mono text-indigo-300 font-medium">{threadId}</span>
+              <button 
+                onClick={onResetThread} 
+                title="Start a new thread session"
+                className="hover:text-white transition-colors ml-1 p-0.5 rounded hover:bg-slate-700/50"
+              >
+                <Icons.Refresh />
+              </button>
+            </div>
+
+            {/* Bookings Drawer Toggle */}
+            <button
+              onClick={onOpenBookings}
+              className="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600/20 to-teal-600/20 hover:from-emerald-600/30 hover:to-teal-600/30 border border-emerald-500/30 text-emerald-300 text-xs font-medium transition-all"
+            >
+              <Icons.Ticket />
+              <span>Bookings</span>
+              {bookingCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 font-bold text-[10px]">
+                  {bookingCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
+      );
+    }
+
+    // Component: Sidebar
+    function Sidebar({ threadId, onResetThread, bookingCount, onOpenBookings, onSendPrompt }) {
+      return (
+        <aside className="w-72 glass-panel border-r border-slate-800/80 p-5 flex flex-col justify-between hidden md:flex shrink-0">
+          <div className="space-y-6">
+            {/* New Session Button */}
+            <button
+              onClick={onResetThread}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/25 active:scale-[0.98]"
+            >
+              <Icons.Refresh />
+              <span>New Conversation</span>
+            </button>
+
+            {/* Active Skills Card */}
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 px-1">
+                LangGraph Skills
+              </h2>
+              <div className="space-y-2">
+                <div className="p-2.5 rounded-xl glass-card flex items-start space-x-3">
+                  <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 mt-0.5">
+                    <Icons.Search />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-200">browse_web</div>
+                    <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                      Live travel schedules, real-time queries & web pages
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl glass-card flex items-start space-x-3">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mt-0.5">
+                    <Icons.Plane />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-200">book_ticket</div>
+                    <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                      Flights, Trains, Buses, Movies & Events booking
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl glass-card flex items-start space-x-3">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-0.5">
+                    <Icons.Ticket />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-200">check_ticket_status</div>
+                    <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                      Verified reservation & PNR status verification
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 px-1">
+                Suggested Actions
+              </h2>
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => onSendPrompt("Book a flight from New York (JFK) to London (LHR) on 2026-11-20 for Alex Morgan, Business Class")}
+                  className="w-full text-left p-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700/50 truncate"
+                >
+                  ✈️ Book JFK ➔ LHR Flight
+                </button>
+                <button
+                  onClick={() => onSendPrompt("Book 2 train tickets from Paris to Lyon for tomorrow for Sophie Martin and Lucas Bernard")}
+                  className="w-full text-left p-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700/50 truncate"
+                >
+                  🚆 Paris ➔ Lyon Train
+                </button>
+                <button
+                  onClick={() => onSendPrompt("Browse real-time travel recommendations for Kyoto in Autumn 2026")}
+                  className="w-full text-left p-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700/50 truncate"
+                >
+                  🌐 Kyoto Autumn Travel Info
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Security & Memory Architecture Note */}
+          <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] space-y-2">
+            <div className="flex items-center space-x-1.5 text-emerald-400 font-medium">
+              <Icons.ShieldCheck />
+              <span>Zero-Key Client Protection</span>
+            </div>
+            <p className="text-slate-400 leading-relaxed">
+              API credentials are securely managed on the backend server (<code className="text-slate-300">env/.env</code>) and are never exposed or requested in the UI.
+            </p>
+            <div className="pt-1.5 border-t border-slate-800 flex items-center justify-between text-slate-500">
+              <span>MemorySaver Checkpointer</span>
+              <span className="text-indigo-400 font-mono">thread={threadId}</span>
+            </div>
+          </div>
+        </aside>
+      );
+    }
+
+    // Component: Tool Execution Badge
+    function ToolExecutionCard({ toolEvent }) {
+      const [expanded, setExpanded] = useState(false);
+      const isBooking = toolEvent.tool === "book_ticket";
+      const isBrowsing = toolEvent.tool === "browse_web";
+      const isStatus = toolEvent.tool === "check_ticket_status";
+
+      const badgeColor = isBooking 
+        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+        : isBrowsing 
+        ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
+        : "bg-amber-500/10 text-amber-400 border-amber-500/30";
+
+      return (
+        <div className="my-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-400 font-medium">Executed Tool:</span>
+              <span className={`px-2 py-0.5 rounded-md font-mono font-medium border ${badgeColor}`}>
+                {toolEvent.tool}
+              </span>
+            </div>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              {expanded ? "Hide Details" : "View Output"}
+            </button>
+          </div>
+
+          {/* Quick summary of arguments */}
+          {toolEvent.args && (
+            <div className="mt-2 text-slate-300 font-mono text-[11px] bg-slate-950/70 p-2 rounded-lg overflow-x-auto">
+              {isBooking && (
+                <div>
+                  <span className="text-emerald-400 font-semibold">{toolEvent.args.category?.toUpperCase()}: </span>
+                  {toolEvent.args.origin} ➔ {toolEvent.args.destination} ({toolEvent.args.date}) | Class: {toolEvent.args.ticket_class || 'Economy'}
+                </div>
+              )}
+              {isBrowsing && (
+                <div>
+                  <span className="text-sky-400 font-semibold">Query: </span>
+                  "{toolEvent.args.query}"
+                </div>
+              )}
+              {isStatus && (
+                <div>
+                  <span className="text-amber-400 font-semibold">PNR: </span>
+                  {toolEvent.args.booking_id}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Collapsible raw tool output */}
+          {expanded && (
+            <div className="mt-2.5 pt-2 border-t border-slate-800">
+              <div className="text-[10px] uppercase font-semibold text-slate-500 mb-1">Tool Output Payload:</div>
+              <pre className="p-2.5 rounded-lg bg-black/50 text-slate-300 text-[11px] font-mono whitespace-pre-wrap overflow-x-auto">
+                {toolEvent.output}
+              </pre>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Component: Boarding Pass / Ticket Confirmation Card
+    function TicketConfirmationCard({ text }) {
+      const [copied, setCopied] = useState(false);
+      
+      // Match booking ID format: FL-XXXX, TR-XXXX, BS-XXXX, MV-XXXX, EV-XXXX, BK-XXXX
+      const idMatch = text.match(/Booking ID:\s*([A-Z]{2}-[A-Za-z0-9]+)/i);
+      if (!idMatch) return null;
+
+      const bookingId = idMatch[1];
+      const categoryMatch = text.match(/Category:\s*([A-Za-z]+)/i);
+      const routeMatch = text.match(/Route \/ Event:\s*([^\n\r]+)/i);
+      const dateMatch = text.match(/Date:\s*([^\n\r]+)/i);
+      const classMatch = text.match(/Class:\s*([^\n\r]+)/i);
+      const costMatch = text.match(/Total Cost:\s*(\$[0-9\.]+)/i);
+
+      const copyId = () => {
+        navigator.clipboard.writeText(bookingId);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      };
+
+      return (
+        <div className="my-3 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950/40 border border-indigo-500/30 p-4 shadow-xl glow-emerald relative overflow-hidden">
+          <div className="flex items-center justify-between pb-3 border-b border-indigo-500/20">
+            <div className="flex items-center space-x-2">
+              <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                <Icons.Ticket />
+              </div>
+              <span className="font-display font-bold text-white text-sm tracking-wide">
+                Confirmed Ticket Reservation
+              </span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <span className="font-mono text-xs font-bold text-indigo-300 bg-indigo-500/20 px-2.5 py-1 rounded-md border border-indigo-500/30">
+                {bookingId}
+              </span>
+              <button 
+                onClick={copyId} 
+                className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800/80 transition-colors"
+                title="Copy Booking ID"
+              >
+                {copied ? <Icons.Check /> : <Icons.Copy />}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 text-xs">
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-slate-400">Category</div>
+              <div className="font-semibold text-slate-100">{categoryMatch ? categoryMatch[1] : 'Travel'}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-slate-400">Date</div>
+              <div className="font-semibold text-slate-100">{dateMatch ? dateMatch[1] : 'Confirmed'}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-slate-400">Class</div>
+              <div className="font-semibold text-indigo-300">{classMatch ? classMatch[1] : 'Economy'}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-slate-400">Total Paid</div>
+              <div className="font-bold text-emerald-400 text-sm">{costMatch ? costMatch[1] : '$0.00'}</div>
+            </div>
+          </div>
+
+          {routeMatch && (
+            <div className="pt-2 border-t border-indigo-500/20 flex items-center justify-between text-xs text-slate-300">
+              <span className="text-slate-400 font-medium">Route:</span>
+              <span className="font-semibold text-white">{routeMatch[1]}</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Component: Message Bubble
+    function MessageBubble({ msg }) {
+      const isUser = msg.sender === "user";
+
+      // Formatted text rendering (handles line breaks and bold)
+      const renderContent = (content) => {
+        if (!content) return null;
+        return content.split("\n").map((line, idx) => (
+          <p key={idx} className={line.trim() === "" ? "h-2" : "leading-relaxed"}>
+            {line}
+          </p>
+        ));
+      };
+
+      return (
+        <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"} my-3`}>
+          <div className={`flex items-start max-w-[85%] md:max-w-[75%] space-x-3 ${isUser ? "flex-row-reverse space-x-reverse" : ""}`}>
+            {/* Avatar */}
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              isUser 
+                ? "bg-gradient-to-tr from-slate-700 to-slate-600 shadow" 
+                : "bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 glow-indigo"
+            }`}>
+              {isUser ? <Icons.User /> : <Icons.Bot />}
+            </div>
+
+            {/* Bubble Container */}
+            <div className="flex flex-col">
+              <div className={`px-4 py-3 rounded-2xl text-sm ${
+                isUser
+                  ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/10"
+                  : "glass-card text-slate-200 rounded-tl-none border border-slate-700/50"
+              }`}>
+                {/* Tool executions if any */}
+                {msg.toolsCalled && msg.toolsCalled.length > 0 && (
+                  <div className="mb-2">
+                    {msg.toolsCalled.map((toolEvent, i) => (
+                      <ToolExecutionCard key={i} toolEvent={toolEvent} />
+                    ))}
+                  </div>
+                )}
+
+                {/* Main text message */}
+                <div className="space-y-1">
+                  {renderContent(msg.content)}
+                </div>
+
+                {/* Visual Boarding pass if booking confirmation text */}
+                {!isUser && msg.content && msg.content.includes("Booking ID:") && (
+                  <TicketConfirmationCard text={msg.content} />
+                )}
+              </div>
+
+              {/* Timestamp */}
+              <span className={`text-[10px] text-slate-500 mt-1 px-1 ${isUser ? "text-right" : "text-left"}`}>
+                {msg.timestamp || "Just now"}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Component: Bookings Drawer Modal
+    function BookingsDrawer({ isOpen, onClose, bookings, onInquireBooking }) {
+      if (!isOpen) return null;
+
+      return (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity">
+          <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 h-full flex flex-col p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Icons.Ticket />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-white text-base">Active Reservations</h3>
+                  <p className="text-xs text-slate-400">{bookings.length} confirmed bookings stored in memory</p>
+                </div>
+              </div>
+              <button 
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <Icons.Close />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4 space-y-3.5">
+              {bookings.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+                  <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mb-3">
+                    <Icons.Ticket />
+                  </div>
+                  <p className="text-sm font-medium text-slate-400">No tickets booked yet</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Ask the agent to book a flight, train, bus, or event to see your itinerary here.
+                  </p>
+                </div>
+              ) : (
+                bookings.map((b, idx) => (
+                  <div key={idx} className="p-4 rounded-xl glass-card border border-slate-700/60 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        {b.category}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-emerald-400">
+                        {b.booking_id}
+                      </span>
+                    </div>
+
+                    <div className="text-sm font-semibold text-white">
+                      {b.origin} ➔ {b.destination}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                      <div>Date: <span className="text-slate-200">{b.date}</span></div>
+                      <div>Class: <span className="text-slate-200">{b.ticket_class}</span></div>
+                      <div>Passengers: <span className="text-slate-200">{b.passengers}</span></div>
+                      <div>Cost: <span className="text-emerald-400 font-semibold">{b.total_cost_usd}</span></div>
+                    </div>
+
+                    {b.passenger_names && (
+                      <div className="text-[11px] text-slate-400 truncate">
+                        Names: <span className="text-slate-300">{b.passenger_names.join(", ")}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-800 flex justify-end space-x-2">
+                      <button
+                        onClick={() => {
+                          onInquireBooking(b.booking_id);
+                          onClose();
+                        }}
+                        className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        Check Status in Chat ➔
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Main App Component
+    function App() {
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState("");
+      const [loading, setLoading] = useState(false);
+      const [threadId, setThreadId] = useState("1");
+      const [bookingCount, setBookingCount] = useState(0);
+      const [bookings, setBookings] = useState([]);
+      const [drawerOpen, setDrawerOpen] = useState(false);
+      const [serverStatus, setServerStatus] = useState({ online: true, keyConfigured: true });
+
+      const chatEndRef = useRef(null);
+
+      // Auto-scroll to bottom of chat
+      const scrollToBottom = () => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      };
+
+      useEffect(() => {
+        scrollToBottom();
+      }, [messages, loading]);
+
+      // Check server status & load initial bookings
+      useEffect(() => {
+        fetchStatus();
+        fetchBookings();
+      }, [threadId]);
+
+      const fetchStatus = async () => {
+        try {
+          const res = await fetch("/api/status");
+          if (res.ok) {
+            const data = await res.json();
+            setServerStatus({
+              online: true,
+              keyConfigured: data.api_key_configured,
+              model: data.model,
+              provider: data.provider,
+              chain: data.chain,
+            });
+            if (data.bookings_count !== undefined) {
+              setBookingCount(data.bookings_count);
+            }
+          }
+        } catch (e) {
+          console.warn("Backend status check failed:", e);
+        }
+      };
+
+      const fetchBookings = async () => {
+        try {
+          const res = await fetch("/api/bookings");
+          if (res.ok) {
+            const data = await res.json();
+            setBookings(data.bookings || []);
+            setBookingCount(data.count || 0);
+          }
+        } catch (e) {
+          console.warn("Failed to fetch bookings:", e);
+        }
+      };
+
+      // Reset thread session
+      const handleResetThread = async () => {
+        try {
+          const res = await fetch("/api/reset", { method: "POST" });
+          const data = await res.json();
+          const newId = data.new_thread_id || String(Date.now()).slice(-4);
+          setThreadId(newId);
+          setMessages([
+            {
+              sender: "agent",
+              content: `Started a fresh conversation session (Thread ID: ${newId}). MemorySaver checkpointer has been reset for this thread. How can I assist you with your travels or bookings?`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+          ]);
+        } catch (e) {
+          setThreadId(String(Date.now()).slice(-4));
+          setMessages([]);
+        }
+      };
+
+      // Send message to backend LangGraph agent
+      const handleSendMessage = async (textToSend) => {
+        const text = (typeof textToSend === "string" ? textToSend : input).trim();
+        if (!text || loading) return;
+
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Append user message immediately
+        const userMsg = { sender: "user", content: text, timestamp };
+        setMessages((prev) => [...prev, userMsg]);
+        setInput("");
+        setLoading(true);
+
+        try {
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: text,
+              thread_id: threadId,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.success) {
+            const agentMsg = {
+              sender: "agent",
+              content: data.reply,
+              toolsCalled: data.tools_called || [],
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
+            setMessages((prev) => [...prev, agentMsg]);
+            if (data.bookings_count !== undefined) {
+              setBookingCount(data.bookings_count);
+              fetchBookings();
+            }
+          } else {
+            setMessages((prev) => [
+              ...prev,
+              {
+                sender: "agent",
+                content: `⚠️ Error from LangGraph backend: ${data.error || "Unable to process request."}`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              }
+            ]);
+          }
+        } catch (err) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: "agent",
+              content: `⚠️ Connection failed: Could not reach the Python backend server on /api/chat. Please make sure server.py is running.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+          ]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleKeyDown = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSendMessage();
+        }
+      };
+
+      return (
+        <div className="h-full w-full flex flex-col bg-[#090D16]">
+          {/* Header */}
+          <Header
+            threadId={threadId}
+            onResetThread={handleResetThread}
+            onOpenBookings={() => {
+              fetchBookings();
+              setDrawerOpen(true);
+            }}
+            bookingCount={bookingCount}
+            serverStatus={serverStatus}
+          />
+
+          <div className="flex-1 flex overflow-hidden">
+            {/* Sidebar */}
+            <Sidebar
+              threadId={threadId}
+              onResetThread={handleResetThread}
+              bookingCount={bookingCount}
+              onOpenBookings={() => setDrawerOpen(true)}
+              onSendPrompt={handleSendMessage}
+            />
+
+            {/* Chat Area */}
+            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+              <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-4">
+                {messages.length === 0 ? (
+                  // Hero Welcome View
+                  <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto text-center space-y-6 my-auto py-12">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center glow-indigo animate-pulse-subtle">
+                      <Icons.Sparkles />
+                    </div>
+
+                    <div className="space-y-2">
+                      <h2 className="font-display font-bold text-2xl md:text-3xl text-white tracking-tight">
+                        LangGraph AI Agent
+                      </h2>
+                      <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto">
+                        Stateful LangGraph workflow equipped with Web Browsing, Multi-Mode Ticket Reservations, and PNR Status Verification.
+                      </p>
+                    </div>
+
+                    {/* Security Notice Pill */}
+                    <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
+                      <Icons.ShieldCheck />
+                      <span>API credentials are safely maintained by the backend server</span>
+                    </div>
+
+                    {/* Starter Prompts Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full text-left pt-4">
+                      <button
+                        onClick={() => handleSendMessage("Book a flight from New York (JFK) to London (LHR) on 2026-11-20 for Sarah Connor")}
+                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
+                      >
+                        <div className="text-indigo-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
+                          <Icons.Plane />
+                          <span>Flight Reservation</span>
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          "Book a flight from NYC to London on 2026-11-20 for Sarah Connor"
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => handleSendMessage("Search train schedules and book 2 tickets from Paris to Lyon for tomorrow for Alice and Bob")}
+                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
+                      >
+                        <div className="text-sky-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
+                          <Icons.Ticket />
+                          <span>Train Booking</span>
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          "Book 2 train tickets from Paris to Lyon for tomorrow for Alice and Bob"
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => handleSendMessage("Browse the top travel attractions and guidelines in Tokyo for Autumn 2026")}
+                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
+                      >
+                        <div className="text-amber-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
+                          <Icons.Search />
+                          <span>Live Web Research</span>
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          "Browse the top travel attractions and guidelines in Tokyo for Autumn 2026"
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => handleSendMessage("Can you check what ticket skills and categories are supported?")}
+                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
+                      >
+                        <div className="text-emerald-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
+                          <Icons.Sparkles />
+                          <span>Check Capabilities</span>
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          "What ticket skills and categories are supported?"
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // Conversation Feed
+                  <div className="max-w-3xl mx-auto w-full pb-6">
+                    {messages.map((m, index) => (
+                      <MessageBubble key={index} msg={m} />
+                    ))}
+
+                    {/* Agent Thinking Indicator */}
+                    {loading && (
+                      <div className="flex items-start space-x-3 my-3">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
+                          <Icons.Bot />
+                        </div>
+                        <div className="glass-card px-4 py-3 rounded-2xl rounded-tl-none border border-slate-700/50 flex items-center space-x-2 text-xs text-slate-300">
+                          <div className="flex space-x-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce"></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                          </div>
+                          <span>LangGraph Agent is reasoning and executing skills...</span>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Input Bar */}
+              <div className="p-4 md:px-8 border-t border-slate-800/80 glass-panel shrink-0">
+                <div className="max-w-3xl mx-auto relative flex flex-col space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <textarea
+                      rows="2"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Ask the agent to browse travel info, book tickets (flights, trains, events), or check status..."
+                      className="flex-1 bg-slate-900/90 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none transition-all"
+                    />
+                    <button
+                      onClick={() => handleSendMessage()}
+                      disabled={loading || !input.trim()}
+                      className={`h-11 px-5 rounded-xl flex items-center justify-center transition-all font-medium text-sm ${
+                        loading || !input.trim()
+                          ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+                          : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-600/30 active:scale-95"
+                      }`}
+                    >
+                      <Icons.Send />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
+                    <span>Press <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Shift+Enter</kbd> for newline</span>
+                    <span className="flex items-center space-x-1">
+                      <Icons.ShieldCheck />
+                      <span>Backend-Secured Auth</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+
+          {/* Bookings Modal Drawer */}
+          <BookingsDrawer
+            isOpen={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            bookings={bookings}
+            onInquireBooking={(id) => handleSendMessage(`Please check the status of ticket reservation ${id}`)}
+          />
+        </div>
+      );
+    }
+
+    // Render the React application
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
