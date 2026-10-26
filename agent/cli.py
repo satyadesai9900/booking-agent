@@ -5,14 +5,12 @@ Interactive Command-Line Runner for the LangGraph Agent.
 import sys
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import MemorySaver
-from langsmith import traceable
 
 from env.config import get_gemini_api_key, config
 from agent.llm import get_llm, build_chain, ACTIVE_LLM
 from agent.graph import build_agent_graph
 
 
-@traceable(name="cli_main")
 def main():
     """Runs interactive CLI loop with MemorySaver checkpointer on thread_id='1'."""
     # Ensure Windows console encoding compatibility
@@ -36,7 +34,12 @@ def main():
 
     # Thread config: invoke using thread=1
     thread_id = config.default_thread_id
-    thread_config = {"configurable": {"thread_id": thread_id}}
+    thread_config = {
+        "configurable": {"thread_id": thread_id},
+        "run_name": "chat_turn",
+        "tags": ["cli", ACTIVE_LLM],
+        "metadata": {"thread_id": thread_id, "llm_provider": ACTIVE_LLM},
+    }
     print(f"Agent ready with MemorySaver checkpointer on thread_id='{thread_id}'!")
     print("Type 'exit' or 'quit' to terminate.\n")
 

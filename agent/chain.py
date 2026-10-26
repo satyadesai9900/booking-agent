@@ -4,7 +4,6 @@ Combines the Model and Parser in an LCEL pipeline (model | parser).
 Allows switching the active LLM with just a single line of code.
 """
 
-from langsmith import traceable
 import os
 from typing import Optional, Any, List
 from langchain_core.messages import AIMessage, BaseMessage
@@ -13,7 +12,8 @@ from langchain_core.runnables import Runnable, RunnableSequence
 
 from env.config import config, get_gemini_api_key
 from agent.skills import TOOLS
-os.environ['agent_project']='booking_agent'
+# Group traces under one LangSmith project unless the environment chooses another
+os.environ.setdefault("LANGSMITH_PROJECT", "booking-agent")
 # ==============================================================================
 # 🎯 CHANGE YOUR LLM WITH JUST THIS SINGLE LINE OF CODE (or set LLM_PROVIDER / ACTIVE_LLM in env):
 # Supported options: "gemini" | "openai" | "anthropic" | "groq" | "ollama" | "deepseek"

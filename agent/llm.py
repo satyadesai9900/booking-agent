@@ -4,7 +4,6 @@ Provides single-line LLM switching and integration with LCEL chains.
 """
 
 from typing import Optional, Any
-from langsmith import traceable
 from agent.chain import (
     ACTIVE_LLM,
     get_model,
@@ -14,7 +13,6 @@ from agent.chain import (
 )
 
 
-@traceable(name="get_llm")
 def get_llm(
     api_key: Optional[str] = None,
     provider: Optional[str] = None,

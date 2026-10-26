@@ -44,10 +44,8 @@ class Settings:
 config = Settings()
 
 
-from langsmith import traceable
 
 
-@traceable(name="get_gemini_api_key")
 def get_gemini_api_key() -> str:
     """Retrieve Gemini API key from environment, config, or user prompt."""
     env_key = os.getenv("GEMINI_API_KEY")

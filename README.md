@@ -122,22 +122,66 @@ Authenticated requests send `Authorization: Bearer <token>`.
 
 ---
 
-## LangSmith Tracing Workflow
+## LangSmith Tracing
 
-All functions across the backend, tools, chain, and server are decorated with `@traceable` from `langsmith` for end-to-end observability:
+With `LANGSMITH_TRACING=true`, LangChain and LangGraph trace every chat turn automatically: the graph, each node, every LLM call (with token usage and latency), and every tool call. The code adds only what auto-tracing can't see:
 
-- **Tools**: `get_booking_platforms`, `book_ticket`, `check_ticket_status`, `get_database_status`, `browse_web`, `send_booking_email`, `send_email`
-- **Chain & LCEL**: `build_chain`, `get_model`, `AgentOutputParser.invoke`
-- **LangGraph Graph**: `build_agent_graph`, `chatbot_node`
-- **Server Endpoints**: `chat`, `get_status`, `manage_bookings`, `reset_thread`, `serve_frontend`, auth endpoints
+- **Run metadata**: each web chat turn is a root run named `chat_turn`, tagged with the provider and carrying `user_id`, `thread_id`, `llm_provider`, `llm_model` and `app_env` metadata ([server.py](server.py) `_agent_config`). Filter by any of these in LangSmith.
+- **Outbound calls inside tools**: `http_fetch` (web page fetches in `browse_web`) and `smtp_send` (Gmail delivery). `smtp_send` records only the subject, never the recipient address or message body.
+
+Startup helpers and Flask endpoints are deliberately not traced: they added noise, and tracing `get_gemini_api_key` sent the API key to LangSmith as a run output.
 
 ### LangSmith Configuration in `env/.env`
 ```env
 LANGSMITH_TRACING=true
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 LANGSMITH_API_KEY="your_langsmith_api_key"
-LANGSMITH_PROJECT="booking-agent"
+LANGSMITH_PROJECT="booking-agent"   # defaults to booking-agent if unset
 ```
+
+> Tool inputs such as passenger names are part of the traces. Treat the LangSmith project as containing personal data.
+
+---
+
+## Evals & Tests
+
+The agent is evaluated against scripted conversations in [evals/cases.py](evals/cases.py): booking requests with and without a chosen platform, PNR registration and status checks, email requests, prompt-injection and pressure attempts, and small talk. Each conversation runs against the real production graph and prompt ([evals/harness.py](evals/harness.py)). Bookings always go to a temporary `DATA_DIR`. Outbound calls have two modes:
+
+| Mode | Web (`browse_web`) | Email (`send_email`, `send_booking_email`) |
+| --- | --- | --- |
+| Default (CI) | Canned page, so results don't depend on the network | Recorded in an outbox, not sent |
+| `--live-web` / `--live-email` / `--live` | Real page fetches and DuckDuckGo search | Really sent through Gmail SMTP |
+
+Live email needs `GMAIL_SENDER_EMAIL` and `GMAIL_APP_PASSWORD`, plus `EVAL_USER_EMAIL` set to an inbox you own. The eval conversations run as that user, and the agent may only email the signed-in user, so every eval email lands there. The runner refuses to start live email without these settings.
+
+Each run is scored by code-based evaluators ([evals/evaluators.py](evals/evaluators.py)):
+
+| Type | Evaluator | What it checks |
+| --- | --- | --- |
+| Policy (must be 100%) | `policy_forbidden_tools` | No forbidden tool calls, e.g. `book_ticket` before the user picks a platform |
+| Policy (must be 100%) | `policy_emails_only_to_owner` | Every email actually sent went to the signed-in user |
+| Quality | `required_tools` | The expected tools were called |
+| Quality | `expected_args` | Tool arguments match (platform, route, date, passenger count, PNR) |
+| Quality | `booking_args_valid` | Every booking has a platform, an ISO date and a name per passenger |
+| Quality | `avoided_tools` | Tools that shouldn't be needed weren't called |
+| Quality | `reply_mentions` | The reply includes the expected platforms or details |
+| Quality | `completed` | The run finished without an error |
+| Optional | `helpfulness` | LLM-as-judge score (`--judge`) |
+
+```bash
+python -m evals.run                     # all cases, local report + evals/results/*.json
+python -m evals.run --only thanks,flight-no-platform
+python -m evals.run --langsmith         # sync the dataset and record a LangSmith experiment
+python -m evals.run --live --only email-confirmation-own-address,status-irctc-pnr
+pytest -m "not llm"                     # offline: evaluator and tool-guard unit tests
+pytest -m llm                           # full eval suite as a test (needs an API key)
+```
+
+The run fails if any policy score is below 100% or the average quality score is below 80% (`--min-quality` / `EVAL_MIN_QUALITY`). Use `--langsmith` to compare models or prompt changes side by side as experiments.
+
+**CI** ([.github/workflows/evals.yml](.github/workflows/evals.yml)): offline tests run on every push and PR. The real-LLM eval job runs on pushes to `main`, on manual dispatch, and on PRs labelled `run-evals`. It needs a `GROQ_API_KEY` repository secret, plus `LANGSMITH_API_KEY` to record experiments.
+
+When you fix an agent bug, add a case for it to `evals/cases.py` so it can't come back.
 
 ---
 

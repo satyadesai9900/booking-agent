@@ -37,3 +37,6 @@ data/
 *.db
 *.db-wal
 *.db-shm
+
+# Eval run reports
+evals/results/

@@ -17,13 +17,11 @@ if sys.platform == "win32":
         pass
 
 from server import app
-from langsmith import traceable
 
 PORT = 5000
 URL = f"http://127.0.0.1:{PORT}"
 
 
-@traceable(name="open_browser")
 def open_browser():
     """Waits for server to initialize then opens the web interface."""
     time.sleep(1.2)
@@ -31,7 +29,6 @@ def open_browser():
     webbrowser.open(URL)
 
 
-@traceable(name="run_app_main")
 def main():
     print("=" * 65)
     print("  LangGraph Gemini AI Agent with React UI")

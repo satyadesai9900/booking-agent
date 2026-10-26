@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
+
 from langsmith import traceable
 
 from env.config import config
@@ -253,6 +254,8 @@ def generate_booking_plaintext(booking: Dict[str, Any], notes: Optional[str] = N
     return "\n".join(lines)
 
 
+# Trace SMTP latency/failures, but keep the recipient address and message body out of LangSmith
+@traceable(name="smtp_send", process_inputs=lambda inputs: {"subject": inputs.get("subject")})
 def _dispatch_gmail(
     recipient_email: str,
     subject: str,
@@ -342,7 +345,6 @@ def _dispatch_gmail(
 
 
 @tool
-@traceable(name="send_booking_email", run_type="tool")
 def send_booking_email(
     recipient_email: str,
     booking_id: str,
@@ -409,7 +411,6 @@ def send_booking_email(
 
 
 @tool
-@traceable(name="send_email", run_type="tool")
 def send_email(
     recipient_email: str,
     subject: str,

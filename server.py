@@ -21,7 +21,6 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langgraph.checkpoint.sqlite import SqliteSaver
-from langsmith import traceable
 
 from env.config import config
 from agent.llm import build_chain, ACTIVE_LLM
@@ -70,7 +69,17 @@ def _agent_config(user: Dict[str, Any], thread_id: str) -> Dict[str, Any]:
             "thread_id": f"{user['id']}::{thread_id}",
             "user_id": user["id"],
             "user_email": user["email"],
-        }
+        },
+        # LangSmith: one named root run per chat turn, filterable by user, thread and model
+        "run_name": "chat_turn",
+        "tags": ["web", ACTIVE_LLM],
+        "metadata": {
+            "user_id": user["id"],
+            "thread_id": thread_id,
+            "llm_provider": ACTIVE_LLM,
+            "llm_model": get_model_name(),
+            "app_env": os.getenv("APP_ENV", "dev"),
+        },
     }
 
 
@@ -91,7 +100,6 @@ chain = None
 agent = None
 
 
-@traceable(name="init_agent")
 def init_agent():
     """Initializes LCEL Chain (model | parser) and LangGraph workflow."""
     global chain, agent
@@ -113,7 +121,6 @@ init_agent()
 # ==============================================================================
 
 @app.route("/api/auth/register", methods=["POST"])
-@traceable(name="auth_register")
 def auth_register():
     data = request.get_json(force=True, silent=True) or {}
     email = data.get("email", "").strip().lower()
@@ -134,7 +141,6 @@ def auth_register():
 
 
 @app.route("/api/auth/login", methods=["POST"])
-@traceable(name="auth_login")
 def auth_login():
     data = request.get_json(force=True, silent=True) or {}
     email = data.get("email", "").strip().lower()
@@ -150,7 +156,6 @@ def auth_login():
 
 
 @app.route("/api/auth/demo", methods=["POST"])
-@traceable(name="auth_demo")
 def auth_demo():
     if not ENABLE_DEMO_LOGIN:
         return jsonify({"error": "Demo access is disabled on this server. Please create an account."}), 403
@@ -167,7 +172,6 @@ def auth_demo():
 
 
 @app.route("/api/auth/me", methods=["GET"])
-@traceable(name="auth_me")
 def auth_me():
     user = get_current_user_from_request()
     if user:
@@ -179,7 +183,6 @@ def auth_me():
 
 
 @app.route("/api/auth/logout", methods=["POST"])
-@traceable(name="auth_logout")
 def auth_logout():
     token = _bearer_token()
     if token:
@@ -192,7 +195,6 @@ def auth_logout():
 # ==============================================================================
 
 @app.route("/api/status", methods=["GET"])
-@traceable(name="get_status")
 def get_status():
     """
     Health check and status endpoint.
@@ -230,7 +232,6 @@ def get_status():
 
 
 @app.route("/api/chat", methods=["POST"])
-@traceable(name="chat_endpoint", run_type="chain")
 def chat():
     """
     Main chat endpoint for React frontend.
@@ -332,7 +333,6 @@ def chat():
 
 
 @app.route("/api/platforms", methods=["GET"])
-@traceable(name="get_platforms")
 def get_platforms():
     """
     Returns curated authorized booking platforms with prefilled search URLs.
@@ -380,7 +380,6 @@ def get_platforms():
 
 
 @app.route("/api/pnr-status", methods=["GET", "POST"])
-@traceable(name="check_pnr_status")
 def check_pnr_status():
     """
     Instant PNR status checker identifying carrier systems and live portal links.
@@ -410,7 +409,6 @@ def check_pnr_status():
 
 
 @app.route("/api/bookings", methods=["GET", "POST"])
-@traceable(name="manage_bookings")
 def manage_bookings():
     """
     GET returns all confirmed reservations (authenticated user).
@@ -468,7 +466,6 @@ def manage_bookings():
 
 @app.route("/api/database/status", methods=["GET"])
 @app.route("/api/database/metrics", methods=["GET"])
-@traceable(name="database_metrics")
 def get_database_metrics():
     """
     Returns real-time diagnostics of the Read/Write Separated Database architecture.
@@ -480,7 +477,6 @@ def get_database_metrics():
 
 
 @app.route("/api/reset", methods=["POST"])
-@traceable(name="reset_thread")
 def reset_thread():
     """
     Generates a new thread ID for starting a clean conversation.
@@ -515,7 +511,6 @@ def serve_privacy():
 
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
-@traceable(name="serve_frontend")
 def serve_frontend(path):
     """Serves the React frontend SPA."""
     if path and os.path.exists(os.path.join(FRONTEND_DIR, path)):

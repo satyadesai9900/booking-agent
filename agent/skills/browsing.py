@@ -31,6 +31,7 @@ def _is_public_http_url(url: str) -> bool:
     return all(ipaddress.ip_address(info[4][0].split("%")[0]).is_global for info in infos)
 
 
+@traceable(name="http_fetch", run_type="retriever")
 def _fetch_public_url(url: str) -> requests.Response:
     """GET a URL, following redirects manually so every hop is checked by _is_public_http_url."""
     for _ in range(MAX_REDIRECTS + 1):
@@ -48,7 +49,6 @@ def _fetch_public_url(url: str) -> requests.Response:
 
 
 @tool
-@traceable(name="browse_web", run_type="tool")
 def browse_web(query: str, url: Optional[str] = None) -> str:
     """
     Search the internet for real-time information, travel schedules, or fetch content from a URL.

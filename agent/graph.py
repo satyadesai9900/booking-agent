@@ -2,16 +2,23 @@
 LangGraph StateGraph workflow definition and compilation.
 """
 
+import logging
+import re
 from typing import Optional, Any
 from langchain_core.messages import SystemMessage
 from langgraph.graph import StateGraph, START
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
-from langsmith import traceable
 
 from agent.state import AgentState
 from agent.skills import TOOLS
 from agent.chain import build_chain, AgentOutputParser
+
+logger = logging.getLogger(__name__)
+
+# How many times to re-ask the model after it calls a tool that doesn't exist
+MAX_TOOL_USE_RETRIES = 2
+TOOL_NAMES = [t.name for t in TOOLS]
 
 SYSTEM_PROMPT = SystemMessage(
     content=(
@@ -36,12 +43,37 @@ SYSTEM_PROMPT = SystemMessage(
         "5. `send_booking_email`: Send an official booking confirmation and itinerary via Gmail to a user's email address.\n"
         "6. `send_email`: Send general email notifications or messages to a user via Gmail.\n"
         "7. `get_database_status`: View real-time metrics of the Read/Write separated database (Master SQLite writes vs Read Replica pool queries, replication lag, and query latency).\n\n"
-        "Always format platform links neatly using markdown [Platform Name](URL) so they are clickable by the user."
+        "Always format platform links neatly using markdown [Platform Name](URL) so they are clickable by the user.\n\n"
+        "🔧 TOOL RULES: The tools listed above are the ONLY tools you have. You have no built-in browser, search, "
+        "python or code tools. To open or read a web page, call `browse_web` with the `url` argument."
     )
 )
 
 
-@traceable(name="build_agent_graph")
+def unknown_tool_call(exc: Exception) -> Optional[str]:
+    """
+    If the provider rejected the response because the model called a tool we didn't offer, return
+    that tool's name ("unknown" if the error doesn't say). Otherwise None.
+
+    Some models (e.g. gpt-oss on Groq) occasionally call built-in tools such as `browser.open`
+    that weren't provided; Groq answers with HTTP 400 `tool_use_failed`.
+    """
+    text = str(exc)
+    if "tool_use_failed" not in text:
+        return None
+    match = re.search(r'"name"\s*:\s*"([^"]+)"', text)
+    return match.group(1) if match else "unknown"
+
+
+def tool_correction(bad_tool: str) -> str:
+    return (
+        f"Your previous reply tried to call `{bad_tool}`, which does not exist. "
+        f"The only tools available are: {', '.join(TOOL_NAMES)}. "
+        "To open or read a web page, call `browse_web` with the `url` argument. "
+        "Otherwise answer directly without calling a tool."
+    )
+
+
 def build_agent_graph(llm_or_chain: Optional[Any] = None, checkpointer: Optional[MemorySaver] = None):
     """
     Constructs the LangGraph compiled state graph using an LCEL Chain (model | parser)
@@ -60,12 +92,21 @@ def build_agent_graph(llm_or_chain: Optional[Any] = None, checkpointer: Optional
         # Already an LCEL chain (e.g. RunnableSequence)
         chain = llm_or_chain
 
-    @traceable(name="chatbot_node")
     def chatbot_node(state: AgentState):
         # Chain executes: prompt/messages -> model -> parser
         messages = [SYSTEM_PROMPT] + state["messages"]
-        response = chain.invoke(messages)
-        return {"messages": [response]}
+        for attempt in range(MAX_TOOL_USE_RETRIES + 1):
+            try:
+                response = chain.invoke(messages)
+                return {"messages": [response]}
+            except Exception as exc:
+                bad_tool = unknown_tool_call(exc)
+                if bad_tool is None or attempt == MAX_TOOL_USE_RETRIES:
+                    raise
+                logger.warning("Model called unavailable tool %r; retrying (%d/%d)",
+                               bad_tool, attempt + 1, MAX_TOOL_USE_RETRIES)
+                # Correction goes only into this request, not into the saved conversation
+                messages = messages + [SystemMessage(content=tool_correction(bad_tool))]
 
     # Build the workflow
     graph_builder = StateGraph(AgentState)

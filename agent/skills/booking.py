@@ -11,7 +11,6 @@ import urllib.parse
 from typing import List, Dict, Any, Optional
 from langchain_core.tools import tool
 from langchain_core.runnables import RunnableConfig
-from langsmith import traceable
 
 # Read/Write Separated Database Engine (Master SQLite + Read Replica Pool)
 from agent.storage.booking_db import (
@@ -235,7 +234,6 @@ def format_platforms_message(
 
 
 @tool
-@traceable(name="get_booking_platforms", run_type="tool")
 def get_booking_platforms(
     category: str,
     origin: str = "",
@@ -353,7 +351,6 @@ def detect_pnr_info(raw_pnr: str) -> Dict[str, Any]:
 
 
 @tool
-@traceable(name="book_ticket", run_type="tool")
 def book_ticket(
     category: str,
     origin: str,
@@ -494,7 +491,6 @@ def book_ticket(
 
 
 @tool
-@traceable(name="check_ticket_status", run_type="tool")
 def check_ticket_status(booking_id: str, config: RunnableConfig = None) -> str:
     """
     Check the status and details of an existing ticket reservation by its booking ID or real carrier PNR.
@@ -569,7 +565,6 @@ def check_ticket_status(booking_id: str, config: RunnableConfig = None) -> str:
 
 
 @tool
-@traceable(name="get_database_status", run_type="tool")
 def get_database_status() -> str:
     """
     Check the operational health and metrics of the Read/Write Separated Database system.
