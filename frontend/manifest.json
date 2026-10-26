@@ -1,0 +1,85 @@
+{
+  "name": "MantaBooking — Multi-Mode Travel & AI Assistant",
+  "short_name": "MantaBooking",
+  "description": "Book Flights, Trains, Buses, Movies, Events, and Hotels with real carrier PNR verification and an embedded LangGraph AI Co-Pilot.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#060911",
+  "theme_color": "#0B0F19",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["travel", "tickets", "productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Track PNR Status",
+      "short_name": "PNR Status",
+      "description": "Instant live verification for IRCTC train and airline PNRs",
+      "url": "/?view=pnr",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "AI Co-Pilot Helper",
+      "short_name": "AI Assistant",
+      "description": "Ask LangGraph AI travel questions and compare platforms",
+      "url": "/?open_ai=true",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Book Flights",
+      "short_name": "Flights",
+      "description": "Search verified flight platforms with zero agency markups",
+      "url": "/?cat=flight",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Train Booking (IRCTC)",
+      "short_name": "Trains",
+      "description": "IRCTC, ConfirmTkt, and RailYatri seat bookings",
+      "url": "/?cat=train",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

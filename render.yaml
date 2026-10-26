@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: mantabooking
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 2 --threads 4 --timeout 120 -b 0.0.0.0:$PORT server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: groq
+      - key: DATA_DIR
+        value: /var/data
+      - key: ENABLE_DEMO_LOGIN
+        value: "false"
+    # SQLite data (users, sessions, bookings, chat history) must live on a persistent disk;
+    # Render's normal filesystem is wiped on every deploy. Disks need a paid instance type.
+    disk:
+      name: mantabooking-data
+      mountPath: /var/data
+      sizeGB: 1

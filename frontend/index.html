@@ -3,7 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LangGraph AI Travel & Booking Agent</title>
+  <title>MantaBooking — Multi-Mode Travel & Ticketing with AI Co-Pilot</title>
+
+  <!-- Android & Google Play Store PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MantaBooking">
+  <meta name="theme-color" content="#0B0F19">
+  <meta name="description" content="Multi-mode booking platform for Flights, Trains, Buses, Movies, Events, and Hotels with real carrier PNR verification and LangGraph AI Co-Pilot.">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
   
   <!-- Modern Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,10 +42,12 @@
               700: '#4338ca',
             },
             surface: {
+              950: '#060911',
               900: '#0B0F19',
-              800: '#111827',
-              700: '#1F2937',
-              600: '#374151',
+              850: '#0F1524',
+              800: '#151D30',
+              700: '#1F2942',
+              600: '#334166',
             }
           }
         }
@@ -51,7 +64,7 @@
   
   <style>
     body {
-      background-color: #090D16;
+      background-color: #060911;
       color: #F3F4F6;
       font-family: 'Inter', sans-serif;
     }
@@ -62,72 +75,96 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(11, 15, 25, 0.7);
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(99, 102, 241, 0.3);
+      background: rgba(99, 102, 241, 0.35);
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(99, 102, 241, 0.6);
+      background: rgba(99, 102, 241, 0.65);
     }
 
-    /* Subtle Glassmorphism */
+    /* Glassmorphism Classes */
     .glass-panel {
-      background: rgba(17, 24, 39, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(15, 21, 36, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .glass-card {
-      background: rgba(31, 41, 55, 0.5);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(21, 29, 48, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .glass-card-hover {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card-hover:hover {
+      transform: translateY(-2px);
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 12px 30px -8px rgba(99, 102, 241, 0.22);
     }
 
     /* Glow effects */
     .glow-indigo {
-      box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 0 30px -5px rgba(99, 102, 241, 0.35);
     }
     
     .glow-emerald {
-      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+      box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.3);
     }
 
-    /* Pulse animation */
-    @keyframes pulse-subtle {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.85; transform: scale(1.02); }
-    }
-    .animate-pulse-subtle {
-      animation: pulse-subtle 3s infinite ease-in-out;
+    .glow-amber {
+      box-shadow: 0 0 30px -5px rgba(245, 158, 11, 0.3);
     }
 
     /* Perforated ticket styling */
     .ticket-edge {
-      background-image: radial-gradient(circle at 0 50%, transparent 10px, #111827 11px),
-                        radial-gradient(circle at 100% 50%, transparent 10px, #111827 11px);
+      background-image: radial-gradient(circle at 0 50%, transparent 12px, #0F1524 13px),
+                        radial-gradient(circle at 100% 50%, transparent 12px, #0F1524 13px);
+    }
+
+    /* Animations */
+    @keyframes pulse-slow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.04); opacity: 0.85; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s infinite ease-in-out;
     }
   </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
-  <div id="root" class="h-full w-full flex flex-col"></div>
+  <div id="root" class="h-full w-full flex flex-col overflow-hidden"></div>
 
   <!-- React Application Source -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // SVG Icons
+    // SVG Icons Hub
     const Icons = {
       Plane: () => (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
         </svg>
       ),
-      Search: () => (
+      Train: () => (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 4H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-8 0V2m8 2V2M4 11h16M7 15h.01M17 15h.01M6 21l2-3m8 3l-2-3" />
+        </svg>
+      ),
+      Bus: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h8m-8 4h8m-8 4h8M5 3h14a2 2 0 012 2v13a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2zm2 17l-1 2m12-2l1 2" />
+        </svg>
+      ),
+      Film: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
         </svg>
       ),
       Ticket: () => (
@@ -135,29 +172,24 @@
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
         </svg>
       ),
-      ShieldCheck: () => (
-        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      Hotel: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
       ),
-      Send: () => (
+      Search: () => (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      ),
-      Refresh: () => (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       ),
       Sparkles: () => (
-        <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
         </svg>
       ),
-      Copy: () => (
+      ExternalLink: () => (
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
         </svg>
       ),
       Check: () => (
@@ -165,267 +197,187 @@
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
         </svg>
       ),
+      Copy: () => (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      ),
       Close: () => (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       ),
+      Send: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+      ),
+      Swap: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      ),
       Bot: () => (
-        <svg className="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       ),
       User: () => (
-        <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
-      )
+      ),
+      Refresh: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      ),
+      ShieldCheck: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ),
+      Lock: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      ),
+      Mail: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+      LogOut: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      ),
     };
 
-    // Component: Header
-    function Header({ threadId, onResetThread, onOpenBookings, bookingCount, serverStatus }) {
-      return (
-        <header className="glass-panel border-b border-slate-800/80 px-6 py-3.5 flex items-center justify-between z-20 shrink-0">
-          <div className="flex items-center space-x-3.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center glow-indigo">
-              <Icons.Sparkles />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="font-display font-bold text-lg text-white tracking-tight">LangGraph Travel Agent</h1>
-                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
-                  AI Agent
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 hidden sm:inline-block">
-                  Chain: model | parser
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 flex items-center space-x-2 mt-0.5">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Server-Secured Auth</span>
-                <span className="text-slate-600">•</span>
-                <span>LCEL Chain Pipeline</span>
-              </p>
-            </div>
-          </div>
+    // Category Metadata & Presets
+    const CATEGORIES = [
+      { id: 'flight', label: 'Flights', icon: Icons.Plane, color: 'indigo', badge: 'Compare Airlines' },
+      { id: 'train', label: 'Trains', icon: Icons.Train, color: 'sky', badge: 'IRCTC & Global' },
+      { id: 'bus', label: 'Buses', icon: Icons.Bus, color: 'emerald', badge: 'Intercity Bus' },
+      { id: 'movie', label: 'Movies', icon: Icons.Film, color: 'purple', badge: 'Cinema & IMAX' },
+      { id: 'event', label: 'Events & Shows', icon: Icons.Ticket, color: 'amber', badge: 'Concerts & Sports' },
+      { id: 'hotel', label: 'Hotels & Stays', icon: Icons.Hotel, color: 'rose', badge: 'Best Stays' },
+    ];
 
-          <div className="flex items-center space-x-3">
-            {/* Thread Info Badge */}
-            <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300">
-              <span className="text-slate-500">Thread:</span>
-              <span className="font-mono text-indigo-300 font-medium">{threadId}</span>
-              <button 
-                onClick={onResetThread} 
-                title="Start a new thread session"
-                className="hover:text-white transition-colors ml-1 p-0.5 rounded hover:bg-slate-700/50"
-              >
-                <Icons.Refresh />
-              </button>
-            </div>
+    const POPULAR_PRESETS = {
+      flight: [
+        { origin: 'JFK', destination: 'LHR', label: 'New York (JFK) ➔ London (LHR)', class: 'Economy' },
+        { origin: 'SFO', destination: 'SEA', label: 'San Francisco ➔ Seattle', class: 'Economy' },
+        { origin: 'BOM', destination: 'DEL', label: 'Mumbai ➔ New Delhi', class: 'Business' },
+        { origin: 'CDG', destination: 'HND', label: 'Paris (CDG) ➔ Tokyo (HND)', class: 'Premium' },
+      ],
+      train: [
+        { origin: 'New Delhi (NDLS)', destination: 'Mumbai Central (BCT)', label: 'NDLS ➔ Mumbai Central (Rajdhani)', class: '3AC' },
+        { origin: 'Paris Gare de Lyon', destination: 'Lyon Part-Dieu', label: 'Paris ➔ Lyon (TGV InOui)', class: 'First' },
+        { origin: 'London Kings Cross', destination: 'Edinburgh Waverley', label: 'London ➔ Edinburgh (LNER)', class: 'Standard' },
+        { origin: 'New York Penn', destination: 'Washington Union', label: 'NYC ➔ Washington (Acela Express)', class: 'Business' },
+      ],
+      bus: [
+        { origin: 'Bangalore', destination: 'Goa', label: 'Bangalore ➔ Goa (AC Sleeper)', class: 'AC Sleeper' },
+        { origin: 'Berlin', destination: 'Prague', label: 'Berlin ➔ Prague (FlixBus)', class: 'Standard' },
+        { origin: 'Los Angeles', destination: 'Las Vegas', label: 'LA ➔ Las Vegas (Intercity Coach)', class: 'Express' },
+        { origin: 'New York', destination: 'Boston', label: 'NYC ➔ Boston (Luxury Coach)', class: 'Standard' },
+      ],
+      movie: [
+        { origin: 'PVR INOX', destination: 'Dune: Part Two', label: 'Dune: Part Two (IMAX 3D Experience)', class: 'IMAX 3D' },
+        { origin: 'AMC Theatres', destination: 'Avatar: The Way of Water', label: 'Avatar (Dolby Cinema)', class: 'Dolby Cinema' },
+        { origin: 'Fandango Cinema', destination: 'Oppenheimer', label: 'Oppenheimer (70mm Special)', class: '70mm' },
+        { origin: 'Cinepolis', destination: 'Interstellar Re-Release', label: 'Interstellar (VIP Screening)', class: 'VIP' },
+      ],
+      event: [
+        { origin: 'Wembley Stadium', destination: 'Coldplay: Music of the Spheres', label: 'Coldplay Live Tour 2026', class: 'Standing Floor' },
+        { origin: 'Madison Square Garden', destination: 'Taylor Swift: The Eras Tour', label: 'Taylor Swift Live in NYC', class: 'Premium Lower Tier' },
+        { origin: 'Silverstone Circuit', destination: 'Formula 1 British Grand Prix', label: 'Formula 1 Grand Prix 2026', class: 'Grandstand Pass' },
+        { origin: 'Boom, Belgium', destination: 'Tomorrowland Electronic Festival', label: 'Tomorrowland Festival Full Pass', class: 'Full Madness' },
+      ],
+      hotel: [
+        { origin: 'Tokyo', destination: 'Shinjuku Luxury Suite', label: 'Tokyo Shinjuku (Near Station)', class: 'Deluxe Suite' },
+        { origin: 'Paris', destination: 'Boutique Eiffel View Hotel', label: 'Paris Central (Eiffel Tower View)', class: 'King Room' },
+        { origin: 'New York', destination: 'Manhattan Skyline Hotel', label: 'NYC Midtown Skyline Hotel', class: 'Skyline Queen' },
+        { origin: 'Bali', destination: 'Ubud Rainforest Private Villa', label: 'Bali Ubud Rainforest Villa', class: 'Private Pool Villa' },
+      ],
+    };
 
-            {/* Bookings Drawer Toggle */}
-            <button
-              onClick={onOpenBookings}
-              className="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600/20 to-teal-600/20 hover:from-emerald-600/30 hover:to-teal-600/30 border border-emerald-500/30 text-emerald-300 text-xs font-medium transition-all"
+    // Helper: Formatted text rendering with clickable links & badge buttons
+    function parseFormattedText(text) {
+      if (!text) return null;
+      const tokenRegex = /(\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\))|(https?:\/\/[^\s\)]+)|(\*\*([^*]+)\*\*)/g;
+      const elements = [];
+      let lastIndex = 0;
+      let match;
+
+      while ((match = tokenRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          elements.push(text.slice(lastIndex, match.index));
+        }
+
+        if (match[1]) {
+          const linkText = match[2];
+          const url = match[3];
+          elements.push(
+            <a
+              key={match.index}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1 px-2 py-0.5 mx-0.5 rounded-md bg-indigo-500/20 hover:bg-indigo-500/35 text-indigo-300 hover:text-white border border-indigo-500/40 transition-all font-medium text-xs group cursor-pointer"
             >
-              <Icons.Ticket />
-              <span>Bookings</span>
-              {bookingCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 font-bold text-[10px]">
-                  {bookingCount}
-                </span>
-              )}
-            </button>
-          </div>
-        </header>
-      );
-    }
-
-    // Component: Sidebar
-    function Sidebar({ threadId, onResetThread, bookingCount, onOpenBookings, onSendPrompt }) {
-      return (
-        <aside className="w-72 glass-panel border-r border-slate-800/80 p-5 flex flex-col justify-between hidden md:flex shrink-0">
-          <div className="space-y-6">
-            {/* New Session Button */}
-            <button
-              onClick={onResetThread}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/25 active:scale-[0.98]"
+              <span>{linkText}</span>
+              <Icons.ExternalLink />
+            </a>
+          );
+        } else if (match[4]) {
+          const url = match[4];
+          elements.push(
+            <a
+              key={match.index}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1 text-indigo-400 hover:text-indigo-300 underline font-medium break-all"
             >
-              <Icons.Refresh />
-              <span>New Conversation</span>
-            </button>
+              <span>{url}</span>
+              <Icons.ExternalLink />
+            </a>
+          );
+        } else if (match[5]) {
+          elements.push(
+            <strong key={match.index} className="font-semibold text-white">
+              {match[6]}
+            </strong>
+          );
+        }
 
-            {/* Active Skills Card */}
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 px-1">
-                LangGraph Skills
-              </h2>
-              <div className="space-y-2">
-                <div className="p-2.5 rounded-xl glass-card flex items-start space-x-3">
-                  <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20 mt-0.5">
-                    <Icons.Search />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-slate-200">browse_web</div>
-                    <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
-                      Live travel schedules, real-time queries & web pages
-                    </div>
-                  </div>
-                </div>
+        lastIndex = tokenRegex.lastIndex;
+      }
 
-                <div className="p-2.5 rounded-xl glass-card flex items-start space-x-3">
-                  <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mt-0.5">
-                    <Icons.Plane />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-slate-200">book_ticket</div>
-                    <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
-                      Flights, Trains, Buses, Movies & Events booking
-                    </div>
-                  </div>
-                </div>
+      if (lastIndex < text.length) {
+        elements.push(text.slice(lastIndex));
+      }
 
-                <div className="p-2.5 rounded-xl glass-card flex items-start space-x-3">
-                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-0.5">
-                    <Icons.Ticket />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-slate-200">check_ticket_status</div>
-                    <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
-                      Verified reservation & PNR status verification
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 px-1">
-                Suggested Actions
-              </h2>
-              <div className="space-y-1.5">
-                <button
-                  onClick={() => onSendPrompt("Book a flight from New York (JFK) to London (LHR) on 2026-11-20 for Alex Morgan, Business Class")}
-                  className="w-full text-left p-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700/50 truncate"
-                >
-                  ✈️ Book JFK ➔ LHR Flight
-                </button>
-                <button
-                  onClick={() => onSendPrompt("Book 2 train tickets from Paris to Lyon for tomorrow for Sophie Martin and Lucas Bernard")}
-                  className="w-full text-left p-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700/50 truncate"
-                >
-                  🚆 Paris ➔ Lyon Train
-                </button>
-                <button
-                  onClick={() => onSendPrompt("Browse real-time travel recommendations for Kyoto in Autumn 2026")}
-                  className="w-full text-left p-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700/50 truncate"
-                >
-                  🌐 Kyoto Autumn Travel Info
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Security & Memory Architecture Note */}
-          <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-[11px] space-y-2">
-            <div className="flex items-center space-x-1.5 text-emerald-400 font-medium">
-              <Icons.ShieldCheck />
-              <span>Zero-Key Client Protection</span>
-            </div>
-            <p className="text-slate-400 leading-relaxed">
-              API credentials are securely managed on the backend server (<code className="text-slate-300">env/.env</code>) and are never exposed or requested in the UI.
-            </p>
-            <div className="pt-1.5 border-t border-slate-800 flex items-center justify-between text-slate-500">
-              <span>MemorySaver Checkpointer</span>
-              <span className="text-indigo-400 font-mono">thread={threadId}</span>
-            </div>
-          </div>
-        </aside>
-      );
-    }
-
-    // Component: Tool Execution Badge
-    function ToolExecutionCard({ toolEvent }) {
-      const [expanded, setExpanded] = useState(false);
-      const isBooking = toolEvent.tool === "book_ticket";
-      const isBrowsing = toolEvent.tool === "browse_web";
-      const isStatus = toolEvent.tool === "check_ticket_status";
-
-      const badgeColor = isBooking 
-        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-        : isBrowsing 
-        ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
-        : "bg-amber-500/10 text-amber-400 border-amber-500/30";
-
-      return (
-        <div className="my-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-xs">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-400 font-medium">Executed Tool:</span>
-              <span className={`px-2 py-0.5 rounded-md font-mono font-medium border ${badgeColor}`}>
-                {toolEvent.tool}
-              </span>
-            </div>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              {expanded ? "Hide Details" : "View Output"}
-            </button>
-          </div>
-
-          {/* Quick summary of arguments */}
-          {toolEvent.args && (
-            <div className="mt-2 text-slate-300 font-mono text-[11px] bg-slate-950/70 p-2 rounded-lg overflow-x-auto">
-              {isBooking && (
-                <div>
-                  <span className="text-emerald-400 font-semibold">{toolEvent.args.category?.toUpperCase()}: </span>
-                  {toolEvent.args.origin} ➔ {toolEvent.args.destination} ({toolEvent.args.date}) | Class: {toolEvent.args.ticket_class || 'Economy'}
-                </div>
-              )}
-              {isBrowsing && (
-                <div>
-                  <span className="text-sky-400 font-semibold">Query: </span>
-                  "{toolEvent.args.query}"
-                </div>
-              )}
-              {isStatus && (
-                <div>
-                  <span className="text-amber-400 font-semibold">PNR: </span>
-                  {toolEvent.args.booking_id}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Collapsible raw tool output */}
-          {expanded && (
-            <div className="mt-2.5 pt-2 border-t border-slate-800">
-              <div className="text-[10px] uppercase font-semibold text-slate-500 mb-1">Tool Output Payload:</div>
-              <pre className="p-2.5 rounded-lg bg-black/50 text-slate-300 text-[11px] font-mono whitespace-pre-wrap overflow-x-auto">
-                {toolEvent.output}
-              </pre>
-            </div>
-          )}
-        </div>
-      );
+      return elements.length > 0 ? elements : text;
     }
 
     // Component: Boarding Pass / Ticket Confirmation Card
     function TicketConfirmationCard({ text }) {
       const [copied, setCopied] = useState(false);
       
-      // Match booking ID format: FL-XXXX, TR-XXXX, BS-XXXX, MV-XXXX, EV-XXXX, BK-XXXX
-      const idMatch = text.match(/Booking ID:\s*([A-Z]{2}-[A-Za-z0-9]+)/i);
+      const idMatch = text.match(/(?:Official Carrier PNR|Booking ID|Reference|PNR):\s*([A-Za-z0-9\-]+)/i);
       if (!idMatch) return null;
 
       const bookingId = idMatch[1];
+      const isOfficial = text.includes("Official Carrier PNR") || /^\d{10}$/.test(bookingId);
+      const platformMatch = text.match(/Platform:\s*([^\n\r]+)/i);
       const categoryMatch = text.match(/Category:\s*([A-Za-z]+)/i);
       const routeMatch = text.match(/Route \/ Event:\s*([^\n\r]+)/i);
       const dateMatch = text.match(/Date:\s*([^\n\r]+)/i);
       const classMatch = text.match(/Class:\s*([^\n\r]+)/i);
-      const costMatch = text.match(/Total Cost:\s*(\$[0-9\.]+)/i);
+      const costMatch = text.match(/(?:Total Cost|Estimated Fare):\s*(\$[0-9\.]+)/i);
 
       const copyId = () => {
         navigator.clipboard.writeText(bookingId);
@@ -441,7 +393,7 @@
                 <Icons.Ticket />
               </div>
               <span className="font-display font-bold text-white text-sm tracking-wide">
-                Confirmed Ticket Reservation
+                {isOfficial ? "Official Ticket Reservation" : "Ticket Itinerary Draft"}
               </span>
             </div>
             <div className="flex items-center space-x-1.5">
@@ -451,14 +403,18 @@
               <button 
                 onClick={copyId} 
                 className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800/80 transition-colors"
-                title="Copy Booking ID"
+                title="Copy Reference"
               >
                 {copied ? <Icons.Check /> : <Icons.Copy />}
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 py-3 text-xs">
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-slate-400">Platform</div>
+              <div className="font-semibold text-indigo-300 truncate">{platformMatch ? platformMatch[1] : 'Selected Platform'}</div>
+            </div>
             <div>
               <div className="text-[10px] uppercase font-semibold text-slate-400">Category</div>
               <div className="font-semibold text-slate-100">{categoryMatch ? categoryMatch[1] : 'Travel'}</div>
@@ -469,17 +425,17 @@
             </div>
             <div>
               <div className="text-[10px] uppercase font-semibold text-slate-400">Class</div>
-              <div className="font-semibold text-indigo-300">{classMatch ? classMatch[1] : 'Economy'}</div>
+              <div className="font-semibold text-slate-200">{classMatch ? classMatch[1] : 'Economy'}</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase font-semibold text-slate-400">Total Paid</div>
+              <div className="text-[10px] uppercase font-semibold text-slate-400">Total</div>
               <div className="font-bold text-emerald-400 text-sm">{costMatch ? costMatch[1] : '$0.00'}</div>
             </div>
           </div>
 
           {routeMatch && (
             <div className="pt-2 border-t border-indigo-500/20 flex items-center justify-between text-xs text-slate-300">
-              <span className="text-slate-400 font-medium">Route:</span>
+              <span className="text-slate-400 font-medium">Route / Event:</span>
               <span className="font-semibold text-white">{routeMatch[1]}</span>
             </div>
           )}
@@ -487,40 +443,131 @@
       );
     }
 
-    // Component: Message Bubble
+    // Component: Tool Execution Card
+    function ToolExecutionCard({ toolEvent }) {
+      const [expanded, setExpanded] = useState(false);
+      const isPlatform = toolEvent.tool === "get_booking_platforms";
+      const isBooking = toolEvent.tool === "book_ticket";
+      const isBrowsing = toolEvent.tool === "browse_web";
+      const isStatus = toolEvent.tool === "check_ticket_status";
+      const isEmail = toolEvent.tool === "send_booking_email" || toolEvent.tool === "send_email";
+
+      const badgeColor = isPlatform
+        ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+        : isBooking 
+        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+        : isBrowsing 
+        ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
+        : isEmail
+        ? "bg-purple-500/10 text-purple-300 border-purple-500/30"
+        : "bg-amber-500/10 text-amber-400 border-amber-500/30";
+
+      return (
+        <div className="my-2 rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-400 font-medium">Skill Run:</span>
+              <span className={`px-2 py-0.5 rounded-md font-mono font-medium border ${badgeColor}`}>
+                {toolEvent.tool}
+              </span>
+            </div>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              {expanded ? "Hide Details" : "View Output"}
+            </button>
+          </div>
+
+          {toolEvent.args && (
+            <div className="mt-2 text-slate-300 font-mono text-[11px] bg-slate-950/70 p-2 rounded-lg overflow-x-auto">
+              {isPlatform && (
+                <div>
+                  <span className="text-cyan-400 font-semibold">Platforms: </span>
+                  {toolEvent.args.category?.toUpperCase()} {toolEvent.args.origin && toolEvent.args.destination ? `(${toolEvent.args.origin} ➔ ${toolEvent.args.destination})` : ''}
+                </div>
+              )}
+              {isBooking && (
+                <div>
+                  <span className="text-emerald-400 font-semibold">{toolEvent.args.category?.toUpperCase()}: </span>
+                  {toolEvent.args.origin} ➔ {toolEvent.args.destination} | Platform: {toolEvent.args.platform || 'Selected'}
+                </div>
+              )}
+              {isStatus && (
+                <div>
+                  <span className="text-amber-400 font-semibold">Checking PNR: </span>
+                  {toolEvent.args.booking_id}
+                </div>
+              )}
+              {isBrowsing && (
+                <div>
+                  <span className="text-sky-400 font-semibold">Live Query: </span>
+                  "{toolEvent.args.query}"
+                </div>
+              )}
+            </div>
+          )}
+
+          {expanded && (
+            <div className="mt-2.5 pt-2 border-t border-slate-800">
+              <pre className="p-2.5 rounded-lg bg-black/50 text-slate-300 text-[11px] font-mono whitespace-pre-wrap overflow-x-auto max-h-48">
+                {toolEvent.output}
+              </pre>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Component: Message Bubble in AI Helper
     function MessageBubble({ msg }) {
       const isUser = msg.sender === "user";
 
-      // Formatted text rendering (handles line breaks and bold)
       const renderContent = (content) => {
         if (!content) return null;
-        return content.split("\n").map((line, idx) => (
-          <p key={idx} className={line.trim() === "" ? "h-2" : "leading-relaxed"}>
-            {line}
-          </p>
-        ));
+        return content.split("\n").map((line, idx) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={idx} className="h-2" />;
+
+          if (trimmed.startsWith("> ")) {
+            return (
+              <div key={idx} className="my-1.5 p-2 rounded-lg bg-indigo-500/10 border-l-2 border-indigo-400 text-xs text-indigo-200">
+                {parseFormattedText(trimmed.slice(2))}
+              </div>
+            );
+          }
+
+          if (trimmed.startsWith("### ")) {
+            return (
+              <h4 key={idx} className="font-bold text-white text-sm mt-2 mb-1">
+                {parseFormattedText(trimmed.slice(4))}
+              </h4>
+            );
+          }
+
+          return (
+            <p key={idx} className="leading-relaxed">
+              {parseFormattedText(line)}
+            </p>
+          );
+        });
       };
 
       return (
         <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"} my-3`}>
-          <div className={`flex items-start max-w-[85%] md:max-w-[75%] space-x-3 ${isUser ? "flex-row-reverse space-x-reverse" : ""}`}>
-            {/* Avatar */}
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-              isUser 
-                ? "bg-gradient-to-tr from-slate-700 to-slate-600 shadow" 
-                : "bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 glow-indigo"
+          <div className={`flex items-start max-w-[88%] space-x-2.5 ${isUser ? "flex-row-reverse space-x-reverse" : ""}`}>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+              isUser ? "bg-slate-700 text-slate-200" : "bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow"
             }`}>
               {isUser ? <Icons.User /> : <Icons.Bot />}
             </div>
 
-            {/* Bubble Container */}
             <div className="flex flex-col">
-              <div className={`px-4 py-3 rounded-2xl text-sm ${
+              <div className={`px-3.5 py-2.5 rounded-2xl text-xs md:text-sm ${
                 isUser
-                  ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-tr-none shadow-lg shadow-indigo-600/10"
-                  : "glass-card text-slate-200 rounded-tl-none border border-slate-700/50"
+                  ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-tr-none shadow"
+                  : "glass-card text-slate-200 rounded-tl-none border border-slate-700/60"
               }`}>
-                {/* Tool executions if any */}
                 {msg.toolsCalled && msg.toolsCalled.length > 0 && (
                   <div className="mb-2">
                     {msg.toolsCalled.map((toolEvent, i) => (
@@ -529,19 +576,16 @@
                   </div>
                 )}
 
-                {/* Main text message */}
                 <div className="space-y-1">
                   {renderContent(msg.content)}
                 </div>
 
-                {/* Visual Boarding pass if booking confirmation text */}
-                {!isUser && msg.content && msg.content.includes("Booking ID:") && (
+                {!isUser && msg.content && (msg.content.includes("Booking ID:") || msg.content.includes("Official Carrier PNR:")) && (
                   <TicketConfirmationCard text={msg.content} />
                 )}
               </div>
 
-              {/* Timestamp */}
-              <span className={`text-[10px] text-slate-500 mt-1 px-1 ${isUser ? "text-right" : "text-left"}`}>
+              <span className={`text-[10px] text-slate-500 mt-0.5 px-1 ${isUser ? "text-right" : "text-left"}`}>
                 {msg.timestamp || "Just now"}
               </span>
             </div>
@@ -550,122 +594,990 @@
       );
     }
 
-    // Component: Bookings Drawer Modal
-    function BookingsDrawer({ isOpen, onClose, bookings, onInquireBooking }) {
+    // Modal: Register Booking / Itinerary Form
+    function RegisterBookingModal({ isOpen, onClose, initialData, onBookingSaved, authToken }) {
       if (!isOpen) return null;
 
+      const [category, setCategory] = useState(initialData.category || 'flight');
+      const [platform, setPlatform] = useState(initialData.platform || 'Google Flights');
+      const [origin, setOrigin] = useState(initialData.origin || '');
+      const [destination, setDestination] = useState(initialData.destination || '');
+      const [date, setDate] = useState(initialData.date || new Date().toISOString().split('T')[0]);
+      const [passengerNames, setPassengerNames] = useState(['']);
+      const [ticketClass, setTicketClass] = useState('Economy');
+      const [officialPnr, setOfficialPnr] = useState('');
+      const [submitting, setSubmitting] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleAddPassenger = () => setPassengerNames([...passengerNames, '']);
+      const handleNameChange = (idx, val) => {
+        const updated = [...passengerNames];
+        updated[idx] = val;
+        setPassengerNames(updated);
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        const validNames = passengerNames.filter(n => n.trim() !== '');
+        if (validNames.length === 0) {
+          setError('Please provide at least 1 passenger name.');
+          return;
+        }
+
+        setSubmitting(true);
+        setError('');
+
+        try {
+          const res = await fetch('/api/bookings', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+            },
+            body: JSON.stringify({
+              category,
+              origin: origin || 'City A',
+              destination: destination || 'City B',
+              date: date || '2026-11-20',
+              passengers: validNames.length,
+              passenger_names: validNames,
+              platform: platform || 'Direct Platform',
+              official_pnr: officialPnr.trim(),
+              ticket_class: ticketClass,
+            }),
+          });
+
+          const data = await res.json();
+          if (res.ok && data.success) {
+            onBookingSaved();
+            onClose();
+          } else {
+            setError(data.error || 'Failed to save booking.');
+          }
+        } catch (err) {
+          setError('Network error saving booking.');
+        } finally {
+          setSubmitting(false);
+        }
+      };
+
       return (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity">
-          <div className="w-full max-w-md bg-slate-900 border-l border-slate-800 h-full flex flex-col p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg glass-panel rounded-2xl border border-indigo-500/30 p-6 shadow-2xl relative">
             <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
                   <Icons.Ticket />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-white text-base">Active Reservations</h3>
-                  <p className="text-xs text-slate-400">{bookings.length} confirmed bookings stored in memory</p>
+                  <h3 className="font-display font-bold text-white text-lg">Save or Register Itinerary</h3>
+                  <p className="text-xs text-slate-400">Store this booking to your account or attach an official carrier PNR</p>
                 </div>
               </div>
-              <button 
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
+              <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
                 <Icons.Close />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-4 space-y-3.5">
-              {bookings.length === 0 ? (
-                <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                  <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mb-3">
-                    <Icons.Ticket />
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3.5 text-xs">
+              {error && (
+                <div className="p-2.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-300">
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 font-medium block mb-1">Selected Platform</label>
+                  <input
+                    type="text"
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value)}
+                    required
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-medium block mb-1">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                  >
+                    <option value="flight">Flight</option>
+                    <option value="train">Train</option>
+                    <option value="bus">Bus</option>
+                    <option value="movie">Movie</option>
+                    <option value="event">Event</option>
+                    <option value="hotel">Hotel</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 font-medium block mb-1">Origin / Venue</label>
+                  <input
+                    type="text"
+                    value={origin}
+                    onChange={(e) => setOrigin(e.target.value)}
+                    placeholder="e.g. New York (JFK)"
+                    required
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-medium block mb-1">Destination</label>
+                  <input
+                    type="text"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    placeholder="e.g. London (LHR)"
+                    required
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-400 font-medium block mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-medium block mb-1">Class / Format</label>
+                  <input
+                    type="text"
+                    value={ticketClass}
+                    onChange={(e) => setTicketClass(e.target.value)}
+                    placeholder="e.g. Economy / 3AC / IMAX"
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                <label className="text-indigo-300 font-semibold flex items-center justify-between">
+                  <span>Official Carrier PNR (Optional)</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Got this from website?</span>
+                </label>
+                <input
+                  type="text"
+                  value={officialPnr}
+                  onChange={(e) => setOfficialPnr(e.target.value)}
+                  placeholder="e.g. 10-digit IRCTC (4521369874) or 6-char Airline (W4KZ9P)"
+                  className="w-full bg-slate-900 border border-indigo-500/40 rounded-xl px-3 py-2 text-white font-mono text-xs focus:border-indigo-400 focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-500">
+                  Leave blank if creating a draft itinerary before checkout.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-slate-400 font-medium">Passenger / Attendee Name(s)</label>
+                  <button
+                    type="button"
+                    onClick={handleAddPassenger}
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300"
+                  >
+                    + Add Passenger
+                  </button>
+                </div>
+                <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                  {passengerNames.map((name, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      value={name}
+                      onChange={(e) => handleNameChange(i, e.target.value)}
+                      placeholder={`Passenger ${i + 1} Full Name`}
+                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-white focus:border-indigo-500 focus:outline-none"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+                >
+                  {submitting ? 'Saving...' : 'Save Reservation'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+
+    // =========================================================================
+    // AUTHENTICATION MODAL (Sign In / Register / Demo Login)
+    // =========================================================================
+    function AuthModal({ isOpen, onClose, onAuthSuccess, initialMode = 'login' }) {
+      if (!isOpen) return null;
+
+      const [mode, setMode] = useState(initialMode);
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [name, setName] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+          const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+          const payload = mode === 'login' ? { email, password } : { name, email, password };
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            onAuthSuccess(data.token, data.user);
+            onClose();
+          } else {
+            setError(data.error || 'Authentication failed. Please verify credentials.');
+          }
+        } catch (err) {
+          setError('Network error contacting auth service.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleDemo = async () => {
+        setError('');
+        setLoading(true);
+        try {
+          const res = await fetch('/api/auth/demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            onAuthSuccess(data.token, data.user);
+            onClose();
+          } else {
+            setError(data.error || 'Demo login failed.');
+          }
+        } catch (err) {
+          setError('Network error contacting demo auth.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md glass-panel rounded-3xl border border-indigo-500/40 p-6 md:p-8 shadow-2xl relative glow-indigo">
+            <button
+              onClick={onClose}
+              className="absolute top-5 right-5 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <Icons.Close />
+            </button>
+
+            <div className="text-center space-y-2 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center mx-auto shadow-lg shadow-indigo-600/30">
+                <Icons.Sparkles />
+              </div>
+              <h3 className="font-display font-extrabold text-2xl text-white tracking-tight">
+                Manta<span className="text-indigo-400">Booking</span>
+              </h3>
+              <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                Sign in to unlock all booking studios, track official carrier PNRs, and access your LangGraph AI Co-Pilot.
+              </p>
+            </div>
+
+            <div className="flex rounded-xl bg-slate-900/90 p-1 border border-slate-800 mb-5">
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setError(''); }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  mode === 'login'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMode('register'); setError(''); }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  mode === 'register'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Create Account
+              </button>
+            </div>
+
+            <div className="mb-5 p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/30 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-[11px] font-bold text-emerald-300 flex items-center space-x-1">
+                  <span>⚡ Instant Evaluation</span>
+                </span>
+                <p className="text-[10px] text-slate-400">Jump right into the full studio with 1 click</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleDemo}
+                disabled={loading}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
+              >
+                Demo Access ➔
+              </button>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center space-x-2">
+                <span>⚠️</span>
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+              {mode === 'register' && (
+                <div className="space-y-1">
+                  <label className="text-slate-300 font-semibold block">Full Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Satya Desai"
+                    required={mode === 'register'}
+                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-slate-300 font-semibold block">Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-300 font-semibold block">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 active:scale-95"
+              >
+                {loading ? 'Authenticating...' : mode === 'login' ? 'Sign In to Studio ➔' : 'Create Account & Sign In ➔'}
+              </button>
+
+              <div className="pt-2 text-center text-[11px] text-slate-500">
+                <span>No account? Use Instant Demo Access for a private guest account.</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // VISITOR LANDING PAGE (Informational UI for Unauthenticated Guests)
+    // =========================================================================
+    function VisitorLanding({ onOpenAuth, onDemoLogin }) {
+      return (
+        <div className="min-h-screen w-full flex flex-col bg-[#060911] text-slate-100 overflow-y-auto selection:bg-indigo-500/30">
+          
+          {/* Informational Top Navbar */}
+          <header className="sticky top-0 z-30 glass-panel border-b border-slate-800/80 px-4 md:px-8 py-3.5 flex items-center justify-between backdrop-blur-md">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center glow-indigo shadow-lg">
+                <Icons.Sparkles />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h1 className="font-display font-extrabold text-xl text-white tracking-tight">
+                    Manta<span className="text-indigo-400">Booking</span>
+                  </h1>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300">
+                    Smart Booking Portal
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 hidden sm:block">
+                  Direct Verified Carriers • CRIS & IATA PNRs • LangGraph AI Co-Pilot
+                </p>
+              </div>
+            </div>
+
+            {/* Informational Nav Links */}
+            <nav className="hidden md:flex items-center space-x-6 text-xs text-slate-300 font-medium">
+              <a href="#features" className="hover:text-white transition-colors">Features</a>
+              <a href="#categories" className="hover:text-white transition-colors">Categories</a>
+              <a href="#pnr-engine" className="hover:text-white transition-colors">PNR Verification</a>
+              <a href="#ai-copilot" className="hover:text-white transition-colors">AI Co-Pilot</a>
+              <a href="#comparison" className="hover:text-white transition-colors">Why Direct?</a>
+            </nav>
+
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-2.5">
+              <button
+                onClick={onDemoLogin}
+                className="hidden sm:flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-all"
+              >
+                <span>⚡ 1-Click Demo</span>
+              </button>
+              <button
+                onClick={() => onOpenAuth('login')}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700/70 transition-all"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => onOpenAuth('register')}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all active:scale-95"
+              >
+                Get Started ➔
+              </button>
+            </div>
+          </header>
+
+          {/* HERO SECTION */}
+          <section className="relative overflow-hidden pt-12 md:pt-20 pb-16 px-4 md:px-8 border-b border-slate-800/80">
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-tr from-indigo-600/20 via-violet-600/20 to-transparent blur-3xl pointer-events-none rounded-full"></div>
+
+            <div className="max-w-5xl mx-auto text-center space-y-6 relative z-10">
+              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-xs text-indigo-300 font-semibold shadow-inner">
+                <span className="animate-pulse text-indigo-400">✦</span>
+                <span>The Next-Generation Multi-Mode Booking & AI Travel Platform</span>
+              </div>
+
+              <h2 className="font-display font-extrabold text-3xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.15]">
+                Book Flights, Trains, Buses & Events Direct. <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-300 to-emerald-400">
+                  Verified Carriers. Powered by AI.
+                </span>
+              </h2>
+
+              <p className="text-slate-400 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed">
+                No fake booking IDs, no middleman price markups. MantaBooking links you straight to authorized platforms with prefilled itineraries, tracks live CRIS & IATA carrier PNRs, and provides an embedded LangGraph AI Co-Pilot.
+              </p>
+
+              {/* Primary Call to Actions */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
+                >
+                  <span>Sign In to Launch Studio</span>
+                  <span>➔</span>
+                </button>
+
+                <button
+                  onClick={onDemoLogin}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-sm transition-all hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
+                >
+                  <span>⚡ Instant Demo Access</span>
+                </button>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="pt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
+                <span className="flex items-center space-x-1.5"><Icons.ShieldCheck /><span>100% Direct Carrier Checkout</span></span>
+                <span className="text-slate-700">•</span>
+                <span className="flex items-center space-x-1.5"><Icons.Check /><span>Official CRIS 10-Digit & IATA PNRs</span></span>
+                <span className="text-slate-700">•</span>
+                <span className="flex items-center space-x-1.5"><Icons.Sparkles /><span>LangGraph AI Assistant</span></span>
+                <span className="text-slate-700">•</span>
+                <span className="flex items-center space-x-1.5"><span>✉️</span><span>Gmail Dispatch</span></span>
+              </div>
+            </div>
+
+            {/* Interactive Live Studio Preview Showcase */}
+            <div className="max-w-5xl mx-auto mt-12 glass-panel p-4 md:p-6 rounded-3xl border border-indigo-500/30 shadow-2xl relative glow-indigo">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                <div className="flex items-center space-x-2">
+                  <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
+                  <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+                  <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+                  <span className="text-xs font-mono text-slate-400 ml-2">MantaBooking Studio — Live Interactive Preview</span>
+                </div>
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className="px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-semibold transition-all"
+                >
+                  Sign In to Interact ➔
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 text-left">
+                {/* Search Preview */}
+                <div className="lg:col-span-2 glass-card p-4 rounded-2xl border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+                    <span className="flex items-center space-x-1.5">
+                      <Icons.Plane />
+                      <span>Multi-Mode Reservation Engine</span>
+                    </span>
+                    <span className="text-indigo-400 font-mono text-[10px]">Flights, Trains, Buses, Movies, Events</span>
                   </div>
-                  <p className="text-sm font-medium text-slate-400">No tickets booked yet</p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Ask the agent to book a flight, train, bus, or event to see your itinerary here.
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                      <span className="text-[10px] text-slate-500 uppercase block">Origin</span>
+                      <span className="text-white font-semibold">New York (JFK)</span>
+                    </div>
+                    <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                      <span className="text-[10px] text-slate-500 uppercase block">Destination</span>
+                      <span className="text-white font-semibold">London Heathrow (LHR)</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800/80 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-white">Google Flights & Skyscanner Direct</div>
+                      <div className="text-[11px] text-slate-400">Prefilled route link • 0% markup • Live redirect</div>
+                    </div>
+                    <button
+                      onClick={() => onOpenAuth('login')}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500"
+                    >
+                      Book on Site ➔
+                    </button>
+                  </div>
+                </div>
+
+                {/* AI & PNR Preview */}
+                <div className="glass-card p-4 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-xs font-semibold text-emerald-400">
+                      <Icons.Ticket />
+                      <span>Live PNR Verification</span>
+                    </div>
+                    <div className="bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-xs space-y-1">
+                      <div className="font-mono text-amber-300 font-bold">2451890342</div>
+                      <div className="text-[11px] text-slate-400">Indian Railways (IRCTC / CRIS)</div>
+                      <div className="text-[10px] text-emerald-400 font-bold">● CONFIRMED • Berth B3-42</div>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs space-y-1">
+                    <div className="flex items-center space-x-1.5 text-indigo-300 font-semibold text-[11px]">
+                      <Icons.Bot />
+                      <span>AI Co-Pilot Advice</span>
+                    </div>
+                    <p className="text-[10px] text-slate-300 leading-snug">
+                      "IndiGo offers the best non-stop flight on this route. Click the link to complete booking on IndiGo direct."
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 2: 6 CORE BOOKING STUDIOS */}
+          <section id="categories" className="py-16 px-4 md:px-8 max-w-6xl mx-auto space-y-8 text-center">
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Complete Coverage</span>
+              <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                Six Dedicated Booking Studios in One Unified Platform
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+                No need to hop between a dozen sites. MantaBooking organizes official carrier platforms across transport, entertainment, and hospitality.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-left">
+              {[
+                { icon: '✈️', title: 'Flights Studio', desc: 'Google Flights, Skyscanner, MakeMyTrip, and IndiGo with real-time seat search and zero hidden agency markups.' },
+                { icon: '🚆', title: 'Trains Studio', desc: 'Official Indian Railways (IRCTC), ConfirmTkt, RailYatri, and Trainline (UK/Europe) with live seat charts.' },
+                { icon: '🚌', title: 'Buses Studio', desc: 'RedBus, AbhiBus, and FlixBus across thousands of intercity express and AC sleeper bus routes.' },
+                { icon: '🍿', title: 'Movies Studio', desc: 'BookMyShow and PVR INOX cinema bookings with IMAX 3D, Dolby Atmos, and 70mm showtimes.' },
+                { icon: '🎟️', title: 'Events & Shows', desc: 'Live concert tours (Coldplay, Taylor Swift), sports tournaments (F1, IPL), and festivals via official portals.' },
+                { icon: '🏨', title: 'Hotels & Stays', desc: 'Direct resort and hotel reservations through Booking.com, Agoda, and boutique villas.' },
+              ].map((item, idx) => (
+                <div key={idx} className="glass-card p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition-all space-y-2.5">
+                  <div className="text-2xl">{item.icon}</div>
+                  <h4 className="font-bold text-white text-base">{item.title}</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                  <button
+                    onClick={() => onOpenAuth('login')}
+                    className="pt-2 text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center space-x-1"
+                  >
+                    <span>Explore in Studio</span>
+                    <span>➔</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* SECTION 3: THE PNR REALITY & VERIFICATION ENGINE */}
+          <section id="pnr-engine" className="py-16 px-4 md:px-8 border-y border-slate-800/80 bg-slate-950/40">
+            <div className="max-w-5xl mx-auto space-y-8">
+              <div className="text-center space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">PNR Transparency Guarantee</span>
+                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                  Why Other AI Agents Gave Wrong PNRs & How MantaBooking Solves It
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
+                  Commercial airline and train PNRs are strictly generated by carrier reservation systems upon payment. MantaBooking respects this reality with carrier-grade verification.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+                    01
+                  </div>
+                  <h4 className="font-bold text-white text-sm">Internal Drafts vs Real PNRs</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Prior to checkout, MantaBooking creates an <strong>Itinerary Draft</strong> (<code className="text-indigo-300">AGT-FL-XXXX</code>). We never falsely claim a mock UUID is a confirmed airline PNR.
                   </p>
                 </div>
-              ) : (
-                bookings.map((b, idx) => (
-                  <div key={idx} className="p-4 rounded-xl glass-card border border-slate-700/60 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        {b.category}
-                      </span>
-                      <span className="font-mono text-xs font-bold text-emerald-400">
-                        {b.booking_id}
-                      </span>
-                    </div>
 
-                    <div className="text-sm font-semibold text-white">
-                      {b.origin} ➔ {b.destination}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                      <div>Date: <span className="text-slate-200">{b.date}</span></div>
-                      <div>Class: <span className="text-slate-200">{b.ticket_class}</span></div>
-                      <div>Passengers: <span className="text-slate-200">{b.passengers}</span></div>
-                      <div>Cost: <span className="text-emerald-400 font-semibold">{b.total_cost_usd}</span></div>
-                    </div>
-
-                    {b.passenger_names && (
-                      <div className="text-[11px] text-slate-400 truncate">
-                        Names: <span className="text-slate-300">{b.passenger_names.join(", ")}</span>
-                      </div>
-                    )}
-
-                    <div className="pt-2 border-t border-slate-800 flex justify-end space-x-2">
-                      <button
-                        onClick={() => {
-                          onInquireBooking(b.booking_id);
-                          onClose();
-                        }}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                      >
-                        Check Status in Chat ➔
-                      </button>
-                    </div>
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+                    02
                   </div>
-                ))
-              )}
+                  <h4 className="font-bold text-white text-sm">10-Digit Indian Railways (CRIS)</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Enter any 10-digit train PNR to automatically resolve live official status servers on <strong>ConfirmTkt</strong>, <strong>IRCTC Official</strong>, and <strong>RailYatri</strong>.
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                    03
+                  </div>
+                  <h4 className="font-bold text-white text-sm">6-Character Airline GDS</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Commercial airlines issue 6-character alphanumeric locators (Amadeus/Sabre). MantaBooking links directly to <strong>CheckMyTrip</strong> and airline check-in portals.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
+
+          {/* SECTION 4: LANGGRAPH AI CO-PILOT */}
+          <section id="ai-copilot" className="py-16 px-4 md:px-8 max-w-5xl mx-auto space-y-8">
+            <div className="text-center space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Stateful Intelligence</span>
+              <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                An Embedded AI Helper that Never Oversteps
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+                Built on LangGraph with MemorySaver checkpointer and DuckDuckGo web browsing. It guides, compares, and suggests—but lets you complete checkout securely.
+              </p>
+            </div>
+
+            <div className="glass-panel p-6 rounded-3xl border border-indigo-500/30 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="space-y-4 text-left">
+                <div className="space-y-2">
+                  <h4 className="font-bold text-white text-lg">What your Co-Pilot does:</h4>
+                  <ul className="space-y-2 text-xs text-slate-300">
+                    <li className="flex items-start space-x-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><strong>Compare Platforms:</strong> Advises whether IndiGo direct, MakeMyTrip, or Skyscanner offers the best cancellation flexibility.</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><strong>Live Web Research:</strong> Looks up baggage allowances, terminal changes, and transit visa requirements in real-time.</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span><strong>Draft Itineraries:</strong> Formats clean trip summaries and dispatches email confirmations via Gmail.</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-indigo-400 font-bold">✓</span>
+                      <span><strong>Strict No-Direct-Book Policy:</strong> Always hands you the official platform link rather than taking payment blindly.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all flex items-center space-x-2"
+                >
+                  <Icons.Bot />
+                  <span>Chat with Co-Pilot in Studio</span>
+                  <span>➔</span>
+                </button>
+              </div>
+
+              {/* Chat Demo Card */}
+              <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-4 space-y-3 font-sans text-xs text-left shadow-inner">
+                <div className="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                  <span className="font-semibold text-white">LangGraph AI Assistant</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Chain: model | parser</span>
+                </div>
+
+                <div className="bg-indigo-600/20 text-indigo-200 p-2.5 rounded-xl rounded-tr-none ml-auto max-w-[85%] border border-indigo-500/30">
+                  "Which platform should I use for booking a train from Delhi to Mumbai?"
+                </div>
+
+                <div className="bg-slate-800 text-slate-200 p-3 rounded-xl rounded-tl-none mr-auto max-w-[92%] border border-slate-700 space-y-1.5">
+                  <p>Here are the top platforms with direct seat availability:</p>
+                  <div className="space-y-1 text-[11px]">
+                    <div>1. <strong><a href="#" className="text-indigo-300 underline">IRCTC Official</a></strong> — Direct Indian Railways quota & instant 10-digit PNR.</div>
+                    <div>2. <strong><a href="#" className="text-sky-300 underline">ConfirmTkt</a></strong> — Alternate train predictions & live status tracking.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 5: COMPARISON MATRIX */}
+          <section id="comparison" className="py-16 px-4 md:px-8 max-w-5xl mx-auto space-y-8 text-center">
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Clear Value</span>
+              <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                MantaBooking vs Traditional Aggregators
+              </h3>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse glass-panel rounded-2xl overflow-hidden border border-slate-800">
+                <thead>
+                  <tr className="bg-slate-900/80 border-b border-slate-800 text-slate-300">
+                    <th className="p-4">Capability</th>
+                    <th className="p-4">Legacy Aggregators & Bots</th>
+                    <th className="p-4 text-indigo-400 font-bold">MantaBooking AI Platform</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80 text-slate-400">
+                  <tr>
+                    <td className="p-4 font-semibold text-slate-200">Carrier Direct Links</td>
+                    <td className="p-4 text-red-400">❌ Traps you in agency markup</td>
+                    <td className="p-4 text-emerald-400 font-bold">✓ 1-Click prefilled carrier redirect</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-semibold text-slate-200">Real PNR Verification</td>
+                    <td className="p-4 text-red-400">❌ Gives fake synthetic IDs</td>
+                    <td className="p-4 text-emerald-400 font-bold">✓ Official CRIS & IATA live portal checks</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-semibold text-slate-200">Embedded AI Co-Pilot</td>
+                    <td className="p-4 text-red-400">❌ Simple keyword chatbots</td>
+                    <td className="p-4 text-emerald-400 font-bold">✓ LangGraph stateful graph with web browsing</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-semibold text-slate-200">All 6 Categories in 1 Hub</td>
+                    <td className="p-4 text-slate-500">Separate apps for each mode</td>
+                    <td className="p-4 text-emerald-400 font-bold">✓ Flights, Trains, Buses, Movies, Events, Hotels</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 font-semibold text-slate-200">Gmail Itinerary Dispatch</td>
+                    <td className="p-4 text-slate-500">Requires manual export</td>
+                    <td className="p-4 text-emerald-400 font-bold">✓ Automated HTML itineraries via Gmail TLS</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* SECTION 6: READY TO START CTA */}
+          <section className="py-20 px-4 md:px-8 text-center bg-gradient-to-b from-transparent to-indigo-950/30 border-t border-slate-800">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <h3 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
+                Ready to Experience Smarter, Direct Booking?
+              </h3>
+              <p className="text-xs sm:text-base text-slate-400">
+                Sign in to launch your personalized booking studio, manage saved itineraries, track official carrier PNRs, and chat with your AI Co-Pilot.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => onOpenAuth('login')}
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
+                >
+                  Sign In to Studio ➔
+                </button>
+                <button
+                  onClick={onDemoLogin}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-sm transition-all hover:scale-105 active:scale-95"
+                >
+                  ⚡ Instant Demo Access
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* FOOTER */}
+          <footer className="py-8 px-4 md:px-8 border-t border-slate-800/80 text-center text-xs text-slate-500 space-y-2">
+            <div className="flex items-center justify-center space-x-2 text-slate-400">
+              <span className="font-bold text-white">MantaBooking</span>
+              <span>•</span>
+              <span>LangGraph Multi-Mode Booking & AI Platform</span>
+            </div>
+            <p className="text-[11px] text-slate-600">
+              © 2026 MantaBooking. Carrier PNRs are verified through official railway and airline GDS portals. Zero middleman fees.
+            </p>
+          </footer>
         </div>
       );
     }
 
     // Main App Component
     function App() {
-      const [messages, setMessages] = useState([]);
-      const [input, setInput] = useState("");
-      const [loading, setLoading] = useState(false);
-      const [threadId, setThreadId] = useState("1");
-      const [bookingCount, setBookingCount] = useState(0);
+      // User authentication state
+      const [user, setUser] = useState(() => {
+        try {
+          const stored = localStorage.getItem('mantabooking_user');
+          return stored ? JSON.parse(stored) : null;
+        } catch (e) {
+          return null;
+        }
+      });
+      const [authToken, setAuthToken] = useState(() => {
+        return localStorage.getItem('mantabooking_token') || '';
+      });
+      const [authModalOpen, setAuthModalOpen] = useState(false);
+      const [authMode, setAuthMode] = useState('login');
+
+      // Check auth status on mount
+      useEffect(() => {
+        if (authToken) {
+          fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.authenticated && data.user) {
+                setUser(data.user);
+                localStorage.setItem('mantabooking_user', JSON.stringify(data.user));
+              } else {
+                handleLogout();
+              }
+            })
+            .catch(() => {});
+        }
+      }, []);
+
+      const handleAuthSuccess = (token, userData) => {
+        setAuthToken(token);
+        setUser(userData);
+        localStorage.setItem('mantabooking_token', token);
+        localStorage.setItem('mantabooking_user', JSON.stringify(userData));
+        setAuthModalOpen(false);
+        fetchBookings(token);
+      };
+
+      const handleLogout = async () => {
+        if (authToken) {
+          try {
+            await fetch('/api/auth/logout', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+          } catch (e) {}
+        }
+        setAuthToken('');
+        setUser(null);
+        localStorage.removeItem('mantabooking_token');
+        localStorage.removeItem('mantabooking_user');
+        setBookings([]);
+        setBookingCount(0);
+      };
+
+      const handleDemoLogin = async () => {
+        try {
+          const res = await fetch('/api/auth/demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          const data = await res.json();
+          if (res.ok && data.success) {
+            handleAuthSuccess(data.token, data.user);
+          }
+        } catch (e) {
+          console.warn('Demo login error:', e);
+        }
+      };
+
+      // Navigation state
+      const [activeTab, setActiveTab] = useState('flight');
+      const [mainView, setMainView] = useState('search'); // 'search' | 'pnr' | 'bookings'
+      
+      // Search inputs
+      const [origin, setOrigin] = useState('JFK');
+      const [destination, setDestination] = useState('LHR');
+      const [date, setDate] = useState('2026-11-20');
+      const [returnDate, setReturnDate] = useState('');
+      const [passengers, setPassengers] = useState(1);
+      const [travelClass, setTravelClass] = useState('Economy');
+      
+      // Data state
+      const [platforms, setPlatforms] = useState([]);
+      const [loadingPlatforms, setLoadingPlatforms] = useState(false);
       const [bookings, setBookings] = useState([]);
-      const [drawerOpen, setDrawerOpen] = useState(false);
-      const [serverStatus, setServerStatus] = useState({ online: true, keyConfigured: true });
+      const [bookingCount, setBookingCount] = useState(0);
+
+      // PNR Tracker state
+      const [pnrInput, setPnrInput] = useState('');
+      const [pnrResult, setPnrResult] = useState(null);
+      const [loadingPnr, setLoadingPnr] = useState(false);
+
+      // Registration modal state
+      const [registerModalOpen, setRegisterModalOpen] = useState(false);
+      const [modalInitialData, setModalInitialData] = useState({});
+
+      // AI Helper Assistant Drawer state
+      const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState('');
+      const [loadingAi, setLoadingAi] = useState(false);
+      const [threadId, setThreadId] = useState(() => Math.random().toString(36).slice(2, 10)); // per-tab conversation id (server also scopes it to the user)
+      const [serverStatus, setServerStatus] = useState({ online: true, keyConfigured: true, model: 'groq' });
 
       const chatEndRef = useRef(null);
 
-      // Auto-scroll to bottom of chat
-      const scrollToBottom = () => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      };
-
-      useEffect(() => {
-        scrollToBottom();
-      }, [messages, loading]);
-
-      // Check server status & load initial bookings
       useEffect(() => {
         fetchStatus();
         fetchBookings();
-      }, [threadId]);
+        loadPlatforms(activeTab, origin, destination, date);
+      }, []);
+
+      useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [messages, loadingAi]);
 
       const fetchStatus = async () => {
         try {
-          const res = await fetch("/api/status");
+          const res = await fetch('/api/status');
           if (res.ok) {
             const data = await res.json();
             setServerStatus({
@@ -673,67 +1585,143 @@
               keyConfigured: data.api_key_configured,
               model: data.model,
               provider: data.provider,
-              chain: data.chain,
             });
             if (data.bookings_count !== undefined) {
               setBookingCount(data.bookings_count);
             }
           }
         } catch (e) {
-          console.warn("Backend status check failed:", e);
+          console.warn('Status check error:', e);
         }
       };
 
-      const fetchBookings = async () => {
+      const fetchBookings = async (tokenOverride) => {
+        const token = tokenOverride !== undefined ? tokenOverride : authToken;
+        if (!token) {
+          setBookings([]);
+          setBookingCount(0);
+          return;
+        }
         try {
-          const res = await fetch("/api/bookings");
+          const res = await fetch('/api/bookings', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
           if (res.ok) {
             const data = await res.json();
             setBookings(data.bookings || []);
             setBookingCount(data.count || 0);
           }
         } catch (e) {
-          console.warn("Failed to fetch bookings:", e);
+          console.warn('Bookings fetch error:', e);
         }
       };
 
-      // Reset thread session
-      const handleResetThread = async () => {
+      const loadPlatforms = async (cat, org, dst, dt) => {
+        setLoadingPlatforms(true);
         try {
-          const res = await fetch("/api/reset", { method: "POST" });
-          const data = await res.json();
-          const newId = data.new_thread_id || String(Date.now()).slice(-4);
-          setThreadId(newId);
-          setMessages([
-            {
-              sender: "agent",
-              content: `Started a fresh conversation session (Thread ID: ${newId}). MemorySaver checkpointer has been reset for this thread. How can I assist you with your travels or bookings?`,
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            }
-          ]);
+          const params = new URLSearchParams({
+            category: cat || activeTab,
+            origin: org || origin,
+            destination: dst || destination,
+            date: dt || date,
+          });
+          const res = await fetch(`/api/platforms?${params.toString()}`);
+          if (res.ok) {
+            const data = await res.json();
+            setPlatforms(data.platforms || []);
+          }
         } catch (e) {
-          setThreadId(String(Date.now()).slice(-4));
-          setMessages([]);
+          console.warn('Error loading platforms:', e);
+        } finally {
+          setLoadingPlatforms(false);
         }
       };
 
-      // Send message to backend LangGraph agent
-      const handleSendMessage = async (textToSend) => {
-        const text = (typeof textToSend === "string" ? textToSend : input).trim();
-        if (!text || loading) return;
+      // Category change handler
+      const handleCategoryChange = (catId) => {
+        setActiveTab(catId);
+        const presets = POPULAR_PRESETS[catId] || [];
+        if (presets.length > 0) {
+          setOrigin(presets[0].origin);
+          setDestination(presets[0].destination);
+          setTravelClass(presets[0].class);
+          loadPlatforms(catId, presets[0].origin, presets[0].destination, date);
+        } else {
+          loadPlatforms(catId, origin, destination, date);
+        }
+      };
 
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        // Append user message immediately
-        const userMsg = { sender: "user", content: text, timestamp };
-        setMessages((prev) => [...prev, userMsg]);
-        setInput("");
-        setLoading(true);
+      // Preset click handler
+      const handleSelectPreset = (p) => {
+        setOrigin(p.origin);
+        setDestination(p.destination);
+        if (p.class) setTravelClass(p.class);
+        loadPlatforms(activeTab, p.origin, p.destination, date);
+      };
+
+      // Swap origin/destination
+      const handleSwap = () => {
+        const temp = origin;
+        setOrigin(destination);
+        setDestination(temp);
+        loadPlatforms(activeTab, destination, temp, date);
+      };
+
+      // PNR lookup handler
+      const handleCheckPnr = async (e) => {
+        if (e) e.preventDefault();
+        const clean = pnrInput.trim();
+        if (!clean) return;
+
+        setLoadingPnr(true);
+        setPnrResult(null);
 
         try {
-          const res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          const res = await fetch(`/api/pnr-status?pnr=${encodeURIComponent(clean)}`, {
+            headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setPnrResult(data);
+          }
+        } catch (err) {
+          console.warn('PNR lookup error:', err);
+        } finally {
+          setLoadingPnr(false);
+        }
+      };
+
+      // Open registration modal for a specific platform
+      const handleOpenRegisterModal = (platformName) => {
+        setModalInitialData({
+          category: activeTab,
+          platform: platformName,
+          origin,
+          destination,
+          date,
+        });
+        setRegisterModalOpen(true);
+      };
+
+      // AI Helper Message Sender
+      const handleSendAiMessage = async (textToSend) => {
+        const text = (typeof textToSend === 'string' ? textToSend : input).trim();
+        if (!text || loadingAi) return;
+
+        setAiDrawerOpen(true);
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const userMsg = { sender: 'user', content: text, timestamp };
+        setMessages((prev) => [...prev, userMsg]);
+        setInput('');
+        setLoadingAi(true);
+
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+            },
             body: JSON.stringify({
               message: text,
               thread_id: threadId,
@@ -741,10 +1729,9 @@
           });
 
           const data = await res.json();
-
           if (res.ok && data.success) {
             const agentMsg = {
-              sender: "agent",
+              sender: 'agent',
               content: data.reply,
               toolsCalled: data.tools_called || [],
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -752,222 +1739,900 @@
             setMessages((prev) => [...prev, agentMsg]);
             if (data.bookings_count !== undefined) {
               setBookingCount(data.bookings_count);
-              fetchBookings();
+              fetchBookings(authToken);
             }
+          } else if (data.requires_auth) {
+            setAuthModalOpen(true);
+            setMessages((prev) => [
+              ...prev,
+              {
+                sender: 'agent',
+                content: `🔒 ${data.error || 'Please sign in to access your AI Co-Pilot.'}`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              },
+            ]);
           } else {
             setMessages((prev) => [
               ...prev,
               {
-                sender: "agent",
-                content: `⚠️ Error from LangGraph backend: ${data.error || "Unable to process request."}`,
+                sender: 'agent',
+                content: `⚠️ Error from assistant: ${data.error || 'Unable to process query.'}`,
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              }
+              },
             ]);
           }
         } catch (err) {
           setMessages((prev) => [
             ...prev,
             {
-              sender: "agent",
-              content: `⚠️ Connection failed: Could not reach the Python backend server on /api/chat. Please make sure server.py is running.`,
+              sender: 'agent',
+              content: `⚠️ Could not reach Python backend server on /api/chat. Please check server.py.`,
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            }
+            },
           ]);
         } finally {
-          setLoading(false);
+          setLoadingAi(false);
         }
       };
 
-      const handleKeyDown = (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          handleSendMessage();
+      const handleResetThread = async () => {
+        try {
+          const res = await fetch('/api/reset', { method: 'POST' });
+          const data = await res.json();
+          const newId = data.new_thread_id || String(Date.now()).slice(-4);
+          setThreadId(newId);
+          setMessages([
+            {
+              sender: 'agent',
+              content: `Started a fresh assistant session (Thread ID: ${newId}). How can I assist you with your travels or platform choices?`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            },
+          ]);
+        } catch (e) {
+          setThreadId(String(Date.now()).slice(-4));
+          setMessages([]);
         }
       };
+
+      // Quick launch AI with custom contextual prompt
+      const handleAskAiAboutRoute = () => {
+        const catName = activeTab.toUpperCase();
+        handleSendAiMessage(`Please analyze and compare the available booking platforms for ${catName} from ${origin} to ${destination} on ${date}. Which platform offers the best rates, flexibility, and booking reliability?`);
+      };
+
+      const handleAskAiAboutPlatform = (platformName) => {
+        handleSendAiMessage(`What are the key advantages, luggage/cancellation policies, and steps to book on ${platformName} for route ${origin} to ${destination}?`);
+      };
+
+      // If user is not authenticated, display the Informational Landing Page
+      if (!user) {
+        return (
+          <div className="h-full w-full flex flex-col bg-[#060911] text-slate-100 overflow-hidden relative">
+            <VisitorLanding
+              onOpenAuth={(mode) => {
+                setAuthMode(mode || 'login');
+                setAuthModalOpen(true);
+              }}
+              onDemoLogin={handleDemoLogin}
+            />
+            <AuthModal
+              isOpen={authModalOpen}
+              onClose={() => setAuthModalOpen(false)}
+              onAuthSuccess={handleAuthSuccess}
+              initialMode={authMode}
+            />
+          </div>
+        );
+      }
 
       return (
-        <div className="h-full w-full flex flex-col bg-[#090D16]">
-          {/* Header */}
-          <Header
-            threadId={threadId}
-            onResetThread={handleResetThread}
-            onOpenBookings={() => {
-              fetchBookings();
-              setDrawerOpen(true);
-            }}
-            bookingCount={bookingCount}
-            serverStatus={serverStatus}
-          />
+        <div className="h-full w-full flex flex-col bg-[#060911] text-slate-100 overflow-hidden relative">
+          {/* Top Navbar */}
+          <header className="glass-panel border-b border-slate-800/80 px-4 md:px-8 py-3.5 flex items-center justify-between z-20 shrink-0">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setMainView('search')}>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center glow-indigo shadow-lg">
+                  <Icons.Sparkles />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h1 className="font-display font-extrabold text-lg md:text-xl text-white tracking-tight">
+                      Manta<span className="text-indigo-400">Booking</span>
+                    </h1>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300">
+                      Multi-Mode Booking
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">
+                    Search platforms, book official tickets & verify real carrier PNRs
+                  </p>
+                </div>
+              </div>
 
-          <div className="flex-1 flex overflow-hidden">
-            {/* Sidebar */}
-            <Sidebar
-              threadId={threadId}
-              onResetThread={handleResetThread}
-              bookingCount={bookingCount}
-              onOpenBookings={() => setDrawerOpen(true)}
-              onSendPrompt={handleSendMessage}
-            />
+              {/* View Switcher Tabs */}
+              <nav className="hidden lg:flex items-center space-x-1 pl-4 border-l border-slate-800 text-xs font-medium">
+                <button
+                  onClick={() => setMainView('search')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center space-x-1.5 ${
+                    mainView === 'search'
+                      ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Icons.Search />
+                  <span>Search & Book</span>
+                </button>
 
-            {/* Chat Area */}
-            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-              <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-4">
-                {messages.length === 0 ? (
-                  // Hero Welcome View
-                  <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto text-center space-y-6 my-auto py-12">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center glow-indigo animate-pulse-subtle">
-                      <Icons.Sparkles />
+                <button
+                  onClick={() => setMainView('pnr')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center space-x-1.5 ${
+                    mainView === 'pnr'
+                      ? 'bg-amber-600/20 text-amber-300 border border-amber-500/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Icons.Ticket />
+                  <span>PNR Live Tracker</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    fetchBookings();
+                    setMainView('bookings');
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center space-x-1.5 ${
+                    mainView === 'bookings'
+                      ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  }`}
+                >
+                  <Icons.Check />
+                  <span>My Itineraries</span>
+                  {bookingCount > 0 && (
+                    <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 font-bold text-[10px]">
+                      {bookingCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Read/Write Database Indicator */}
+                <div className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/40 border border-cyan-800/40 text-[11px] text-cyan-300 font-mono" title="Read/Write Separation: Master SQLite WAL (Writes) + 2 Read Replicas (Reads)">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  <span>DB: Master (W) + 2 Replicas (R)</span>
+                </div>
+              </nav>
+            </div>
+
+            {/* Right Action Controls */}
+            <div className="flex items-center space-x-2.5">
+              <button
+                onClick={() => setMainView('pnr')}
+                className="hidden sm:flex lg:hidden items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 text-xs font-medium"
+              >
+                <Icons.Ticket />
+                <span>PNR Check</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  fetchBookings();
+                  setMainView('bookings');
+                }}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-xs font-medium hover:bg-emerald-500/20 transition-all"
+              >
+                <Icons.Ticket />
+                <span className="hidden sm:inline">Saved Bookings</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 font-bold text-[10px]">
+                  {bookingCount}
+                </span>
+              </button>
+
+              {/* AI Co-Pilot Toggle Button */}
+              <button
+                onClick={() => setAiDrawerOpen(!aiDrawerOpen)}
+                className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-xl font-medium text-xs transition-all ${
+                  aiDrawerOpen
+                    ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400'
+                    : 'bg-gradient-to-r from-indigo-600/30 to-violet-600/30 hover:from-indigo-600/50 hover:to-violet-600/50 border border-indigo-500/40 text-indigo-200'
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <Icons.Sparkles />
+                <span>AI Co-Pilot</span>
+              </button>
+
+              {/* User Profile Pill & Sign Out */}
+              {user && (
+                <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+                  <img
+                    src={user.avatar || "https://api.dicebear.com/7.x/initials/svg?seed=User"}
+                    alt={user.name}
+                    className="w-7 h-7 rounded-lg border border-indigo-500/40 shadow-sm shrink-0"
+                  />
+                  <div className="hidden sm:block text-left text-xs leading-tight">
+                    <div className="font-bold text-white truncate max-w-[110px]">{user.name}</div>
+                    <div className="text-[10px] text-emerald-400 font-mono">● Signed In</div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    title="Sign Out of MantaBooking"
+                    className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-red-500/20 text-slate-400 hover:text-red-300 border border-slate-700/60 hover:border-red-500/30 transition-all text-xs"
+                  >
+                    <Icons.Close />
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* Main Body View */}
+          <div className="flex-1 flex overflow-hidden relative">
+            <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6">
+              
+              {/* VIEW 1: SEARCH & BOOKING STUDIO */}
+              {mainView === 'search' && (
+                <div className="max-w-6xl mx-auto space-y-6 animate-fade-in pb-16">
+                  {/* Category Navigation Pills */}
+                  <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+                    {CATEGORIES.map((cat) => {
+                      const IconComp = cat.icon;
+                      const isSelected = activeTab === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => handleCategoryChange(cat.id)}
+                          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all whitespace-nowrap ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/25 scale-[1.02]'
+                              : 'glass-card text-slate-300 hover:text-white hover:border-slate-600'
+                          }`}
+                        >
+                          <IconComp />
+                          <span>{cat.label}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                            isSelected ? 'bg-black/30 text-white' : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {cat.badge}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Search Engine Studio Card */}
+                  <div className="glass-panel rounded-3xl p-5 md:p-7 border border-indigo-500/25 glow-indigo relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between pb-5 border-b border-slate-800 gap-3">
+                      <div>
+                        <h2 className="font-display font-extrabold text-xl md:text-2xl text-white">
+                          {activeTab === 'flight' && 'Compare Global Airlines & Book Flights'}
+                          {activeTab === 'train' && 'Indian Railways (IRCTC) & International Trains'}
+                          {activeTab === 'bus' && 'Intercity Bus Booking & Real-Time Tracking'}
+                          {activeTab === 'movie' && 'Cinema Showtimes, IMAX 3D & Multiplex Tickets'}
+                          {activeTab === 'event' && 'Concert Tours, Festivals, Comedy & Sports Events'}
+                          {activeTab === 'hotel' && 'Worldwide Luxury Hotels, Resorts & Vacation Stays'}
+                        </h2>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Direct links with real-time schedule & pricing data. AI Co-Pilot stands by to help compare.
+                        </p>
+                      </div>
+
+                      {/* Quick Route Swap Pill */}
+                      <button
+                        onClick={handleAskAiAboutRoute}
+                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-xs font-medium transition-all"
+                      >
+                        <Icons.Sparkles />
+                        <span>Ask AI to Compare Deals</span>
+                      </button>
                     </div>
 
-                    <div className="space-y-2">
-                      <h2 className="font-display font-bold text-2xl md:text-3xl text-white tracking-tight">
-                        LangGraph AI Agent
+                    {/* Interactive Input Form */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-5">
+                      {/* Origin / Departure Location */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          {activeTab === 'movie' ? 'Cinema / City' : activeTab === 'hotel' ? 'Destination City' : 'Departure / Origin'}
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            value={origin}
+                            onChange={(e) => setOrigin(e.target.value)}
+                            placeholder={activeTab === 'movie' ? 'e.g. PVR Cinemas' : 'e.g. JFK / New Delhi'}
+                            className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                          />
+                          {activeTab !== 'movie' && activeTab !== 'hotel' && (
+                            <button
+                              onClick={handleSwap}
+                              title="Swap route"
+                              className="absolute right-2 p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition-colors"
+                            >
+                              <Icons.Swap />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Destination / Event Title */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          {activeTab === 'movie' ? 'Movie Title' : activeTab === 'event' ? 'Concert / Artist' : activeTab === 'hotel' ? 'Property / Area' : 'Arrival / Destination'}
+                        </label>
+                        <input
+                          type="text"
+                          value={destination}
+                          onChange={(e) => setDestination(e.target.value)}
+                          placeholder={activeTab === 'movie' ? 'e.g. Dune Part Two' : 'e.g. London / Mumbai'}
+                          className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      {/* Travel Date */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                          {activeTab === 'hotel' ? 'Check-in Date' : 'Journey Date'}
+                        </label>
+                        <input
+                          type="date"
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                          className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      {/* Passengers & Class tier */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Passengers</label>
+                          <select
+                            value={passengers}
+                            onChange={(e) => setPassengers(Number(e.target.value))}
+                            className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-2.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+                          >
+                            <option value={1}>1 Pax</option>
+                            <option value={2}>2 Pax</option>
+                            <option value={3}>3 Pax</option>
+                            <option value={4}>4 Pax</option>
+                            <option value={5}>5+ Pax</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tier / Class</label>
+                          <input
+                            type="text"
+                            value={travelClass}
+                            onChange={(e) => setTravelClass(e.target.value)}
+                            className="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-2.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Popular Quick Presets Chips */}
+                    <div className="pt-4 flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] text-slate-400 font-medium">Popular:</span>
+                      {(POPULAR_PRESETS[activeTab] || []).map((preset, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSelectPreset(preset)}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-[11px] text-slate-300 hover:text-white border border-slate-700/50 transition-colors"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="pt-5 mt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="text-xs text-slate-400 flex items-center space-x-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>Zero Booking Fees • Direct Carrier Links • Live Redirect</span>
+                      </div>
+
+                      <div className="flex items-center space-x-2.5 w-full sm:w-auto">
+                        <button
+                          onClick={() => handleOpenRegisterModal('Selected Partner')}
+                          className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl glass-card hover:bg-slate-800 text-xs text-indigo-300 font-medium transition-all"
+                        >
+                          + Register Itinerary
+                        </button>
+                        <button
+                          onClick={() => loadPlatforms(activeTab, origin, destination, date)}
+                          className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2"
+                        >
+                          <Icons.Search />
+                          <span>Search Platforms</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Platforms Results Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-display font-bold text-lg text-white">
+                          Authorized Booking Platforms for {activeTab.toUpperCase()}
+                        </h3>
+                        <p className="text-xs text-slate-400">
+                          Select your preferred platform to complete checkout, or ask the AI Co-Pilot for price advice.
+                        </p>
+                      </div>
+
+                      <div className="text-xs text-indigo-400 font-mono">
+                        {platforms.length} platforms available
+                      </div>
+                    </div>
+
+                    {loadingPlatforms ? (
+                      <div className="h-48 flex flex-col items-center justify-center text-slate-400 space-y-3">
+                        <div className="w-8 h-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+                        <p className="text-xs">Fetching verified platforms and query links...</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {platforms.map((p, idx) => (
+                          <div
+                            key={idx}
+                            className="glass-card glass-card-hover rounded-2xl p-5 border border-slate-800 flex flex-col justify-between space-y-4 relative"
+                          >
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between">
+                                <span className="font-display font-bold text-white text-base">
+                                  {p.name}
+                                </span>
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                                  Verified
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                {p.description}
+                              </p>
+                            </div>
+
+                            <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
+                              <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                <span>Estimated Base Fare:</span>
+                                <span className="text-emerald-400 font-semibold font-mono">
+                                  {activeTab === 'flight' && '$150.00'}
+                                  {activeTab === 'train' && '$45.00'}
+                                  {activeTab === 'bus' && '$25.00'}
+                                  {activeTab === 'movie' && '$15.00'}
+                                  {activeTab === 'event' && '$75.00'}
+                                  {activeTab === 'hotel' && '$95.00'}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
+                                <a
+                                  href={p.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-full flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow transition-all group"
+                                >
+                                  <span>Book on Site</span>
+                                  <Icons.ExternalLink />
+                                </a>
+
+                                <button
+                                  onClick={() => handleOpenRegisterModal(p.name)}
+                                  className="w-full px-3 py-2 rounded-xl glass-card hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-medium transition-all"
+                                >
+                                  Save Draft
+                                </button>
+                              </div>
+
+                              <button
+                                onClick={() => handleAskAiAboutPlatform(p.name)}
+                                className="w-full text-center text-[11px] text-indigo-400 hover:text-indigo-300 py-1 transition-colors flex items-center justify-center space-x-1"
+                              >
+                                <Icons.Sparkles />
+                                <span>Ask AI Co-Pilot about {p.name}</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 2: PNR LIVE STATUS TRACKER */}
+              {mainView === 'pnr' && (
+                <div className="max-w-3xl mx-auto space-y-6 animate-fade-in py-6">
+                  <div className="text-center space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto mb-2">
+                      <Icons.Ticket />
+                    </div>
+                    <h2 className="font-display font-extrabold text-2xl md:text-3xl text-white">
+                      Live PNR & Reservation Status Tracker
+                    </h2>
+                    <p className="text-xs md:text-sm text-slate-400 max-w-lg mx-auto">
+                      Verify real Indian Railways (IRCTC) 10-digit PNRs, Airline 6-character GDS Record Locators, or Agent Session References.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleCheckPnr} className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-300">Enter PNR / Booking Reference</label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={pnrInput}
+                          onChange={(e) => setPnrInput(e.target.value)}
+                          placeholder="e.g. 4521369874 (IRCTC Train) or W4KZ9P (Airline Flight)"
+                          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                        />
+                        <button
+                          type="submit"
+                          disabled={loadingPnr || !pnrInput.trim()}
+                          className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
+                        >
+                          {loadingPnr ? 'Checking...' : 'Check Status'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px] text-slate-400">
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <strong className="text-slate-200 block">Indian Railways:</strong>
+                        Exact 10 digits (e.g. 4521369874)
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <strong className="text-slate-200 block">Airline PNR:</strong>
+                        6 alphanumeric chars (e.g. W4KZ9P)
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
+                        <strong className="text-slate-200 block">Internal Reference:</strong>
+                        AGT-FL-XXXX or AGT-TR-XXXX
+                      </div>
+                    </div>
+                  </form>
+
+                  {/* PNR Results Box */}
+                  {pnrResult && (
+                    <div className="glass-card rounded-2xl p-6 border border-slate-700/80 space-y-4 animate-fade-in">
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-sm font-bold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-md border border-amber-500/30">
+                            {pnrResult.pnr}
+                          </span>
+                          <span className="text-xs font-semibold text-white">
+                            {pnrResult.info?.name}
+                          </span>
+                        </div>
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
+                          pnrResult.info?.is_official_carrier_pnr
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'
+                        }`}>
+                          {pnrResult.info?.is_official_carrier_pnr ? 'Official Carrier PNR' : 'Session Reference'}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {pnrResult.info?.guidance}
+                      </p>
+
+                      {pnrResult.info?.portals && pnrResult.info.portals.length > 0 && (
+                        <div className="space-y-2 pt-2">
+                          <h4 className="text-xs font-semibold uppercase text-slate-400">
+                            Live Official Verification Servers:
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {pnrResult.info.portals.map((portal, idx) => (
+                              <a
+                                key={idx}
+                                href={portal.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-amber-500/40 transition-all flex flex-col justify-between group"
+                              >
+                                <div className="flex items-center justify-between text-xs font-bold text-amber-300 group-hover:text-amber-200">
+                                  <span>{portal.name}</span>
+                                  <Icons.ExternalLink />
+                                </div>
+                                <span className="text-[11px] text-slate-400 mt-1">{portal.desc}</span>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {pnrResult.has_local_booking && pnrResult.booking && (
+                        <div className="mt-4 pt-4 border-t border-slate-800 bg-slate-950/50 p-3.5 rounded-xl space-y-2">
+                          <span className="text-[11px] font-bold uppercase text-emerald-400">Linked Local Itinerary Record</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-300">
+                            <div>Route: <span className="text-white font-semibold">{pnrResult.booking.origin} ➔ {pnrResult.booking.destination}</span></div>
+                            <div>Date: <span className="text-white">{pnrResult.booking.date}</span></div>
+                            <div>Class: <span className="text-indigo-300">{pnrResult.booking.ticket_class}</span></div>
+                            <div>Status: <span className="text-emerald-400 font-bold">{pnrResult.booking.status}</span></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* VIEW 3: MY BOOKINGS / SAVED ITINERARIES */}
+              {mainView === 'bookings' && (
+                <div className="max-w-5xl mx-auto space-y-6 animate-fade-in py-4">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+                    <div>
+                      <h2 className="font-display font-extrabold text-2xl text-white">
+                        My Booked Reservations & Itineraries
                       </h2>
-                      <p className="text-slate-400 text-sm md:text-base max-w-lg mx-auto">
-                        Stateful LangGraph workflow equipped with Web Browsing, Multi-Mode Ticket Reservations, and PNR Status Verification.
+                      <p className="text-xs text-slate-400 flex items-center space-x-2 mt-1">
+                        <span>{bookings.length} reservations</span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-cyan-400 font-mono text-[11px] bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
+                          ⚡ CQRS: Master SQLite (Writes) + 2 Read Replicas (Reads)
+                        </span>
                       </p>
                     </div>
 
-                    {/* Security Notice Pill */}
-                    <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
-                      <Icons.ShieldCheck />
-                      <span>API credentials are safely maintained by the backend server</span>
-                    </div>
-
-                    {/* Starter Prompts Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full text-left pt-4">
-                      <button
-                        onClick={() => handleSendMessage("Book a flight from New York (JFK) to London (LHR) on 2026-11-20 for Sarah Connor")}
-                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
-                      >
-                        <div className="text-indigo-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
-                          <Icons.Plane />
-                          <span>Flight Reservation</span>
-                        </div>
-                        <div className="text-xs text-slate-300">
-                          "Book a flight from NYC to London on 2026-11-20 for Sarah Connor"
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => handleSendMessage("Search train schedules and book 2 tickets from Paris to Lyon for tomorrow for Alice and Bob")}
-                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
-                      >
-                        <div className="text-sky-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
-                          <Icons.Ticket />
-                          <span>Train Booking</span>
-                        </div>
-                        <div className="text-xs text-slate-300">
-                          "Book 2 train tickets from Paris to Lyon for tomorrow for Alice and Bob"
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => handleSendMessage("Browse the top travel attractions and guidelines in Tokyo for Autumn 2026")}
-                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
-                      >
-                        <div className="text-amber-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
-                          <Icons.Search />
-                          <span>Live Web Research</span>
-                        </div>
-                        <div className="text-xs text-slate-300">
-                          "Browse the top travel attractions and guidelines in Tokyo for Autumn 2026"
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => handleSendMessage("Can you check what ticket skills and categories are supported?")}
-                        className="p-4 rounded-xl glass-card hover:border-indigo-500/40 transition-all hover:scale-[1.01] text-left group"
-                      >
-                        <div className="text-emerald-400 font-semibold text-xs flex items-center space-x-1.5 mb-1">
-                          <Icons.Sparkles />
-                          <span>Check Capabilities</span>
-                        </div>
-                        <div className="text-xs text-slate-300">
-                          "What ticket skills and categories are supported?"
-                        </div>
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleOpenRegisterModal('Custom Booking')}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs shadow transition-all"
+                    >
+                      + Add Reservation
+                    </button>
                   </div>
-                ) : (
-                  // Conversation Feed
-                  <div className="max-w-3xl mx-auto w-full pb-6">
-                    {messages.map((m, index) => (
-                      <MessageBubble key={index} msg={m} />
-                    ))}
 
-                    {/* Agent Thinking Indicator */}
-                    {loading && (
-                      <div className="flex items-start space-x-3 my-3">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
-                          <Icons.Bot />
-                        </div>
-                        <div className="glass-card px-4 py-3 rounded-2xl rounded-tl-none border border-slate-700/50 flex items-center space-x-2 text-xs text-slate-300">
-                          <div className="flex space-x-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce"></div>
-                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0.4s" }}></div>
-                          </div>
-                          <span>LangGraph Agent is reasoning and executing skills...</span>
-                        </div>
+                  {bookings.length === 0 ? (
+                    <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500 glass-panel rounded-3xl">
+                      <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-3">
+                        <Icons.Ticket />
                       </div>
-                    )}
-                    <div ref={chatEndRef} />
-                  </div>
-                )}
-              </div>
+                      <p className="text-sm font-semibold text-slate-300">No Reservations Stored Yet</p>
+                      <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                        Use the search engine to browse platforms, save a draft itinerary, or enter your official PNR.
+                      </p>
+                      <button
+                        onClick={() => setMainView('search')}
+                        className="mt-4 px-4 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-xs text-indigo-300 font-medium"
+                      >
+                        Explore Platforms ➔
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {bookings.map((b, idx) => (
+                        <div key={idx} className="glass-card rounded-2xl p-5 border border-slate-800 space-y-3.5 relative overflow-hidden">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                              {b.category}
+                            </span>
+                            <span className="font-mono text-xs font-bold text-emerald-400">
+                              {b.official_pnr ? `${b.official_pnr} (Official PNR)` : b.booking_id}
+                            </span>
+                          </div>
 
-              {/* Chat Input Bar */}
-              <div className="p-4 md:px-8 border-t border-slate-800/80 glass-panel shrink-0">
-                <div className="max-w-3xl mx-auto relative flex flex-col space-y-2">
+                          <div className="text-base font-bold text-white">
+                            {b.origin} ➔ {b.destination}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs text-slate-400 bg-slate-950/40 p-3 rounded-xl">
+                            <div>Platform: <span className="text-indigo-300 font-semibold">{b.platform || 'Direct'}</span></div>
+                            <div>Date: <span className="text-slate-200">{b.date}</span></div>
+                            <div>Class: <span className="text-slate-200">{b.ticket_class}</span></div>
+                            <div>Cost: <span className="text-emerald-400 font-bold">{b.total_cost_usd}</span></div>
+                            {b.passenger_names && (
+                              <div className="col-span-2 truncate text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                                Passengers: <span className="text-slate-200">{b.passenger_names.join(', ')}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="pt-2 flex items-center justify-between text-xs">
+                            <button
+                              onClick={() => {
+                                setPnrInput(b.official_pnr || b.booking_id);
+                                setMainView('pnr');
+                              }}
+                              className="text-amber-400 hover:text-amber-300 font-medium"
+                            >
+                              Check Live PNR ➔
+                            </button>
+
+                            <button
+                              onClick={() => handleSendAiMessage(`Please check the status of reservation ${b.official_pnr || b.booking_id} and email the itinerary to my email.`)}
+                              className="text-indigo-400 hover:text-indigo-300"
+                            >
+                              Email / Ask AI ➔
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </main>
+
+            {/* AI HELPER CO-PILOT SLIDE-OVER DRAWER */}
+            {aiDrawerOpen && (
+              <aside className="w-full md:w-[440px] lg:w-[480px] glass-panel border-l border-slate-800 h-full flex flex-col z-30 shadow-2xl absolute md:relative right-0 top-0 bottom-0 bg-[#0B0F19]/95 backdrop-blur-2xl animate-fade-in">
+                {/* AI Header */}
+                <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center glow-indigo shadow">
+                      <Icons.Sparkles />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-1.5">
+                        <h3 className="font-display font-bold text-white text-sm">AI Travel Co-Pilot</h3>
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          LangGraph
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Ask travel questions, compare deals, or verify PNRs
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={handleResetThread}
+                      title="New Conversation"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    >
+                      <Icons.Refresh />
+                    </button>
+                    <button
+                      onClick={() => setAiDrawerOpen(false)}
+                      title="Close Co-Pilot"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                    >
+                      <Icons.Close />
+                    </button>
+                  </div>
+                </div>
+
+                {/* AI Chat History */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {messages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4 my-auto">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                        <Icons.Bot />
+                      </div>
+                      <div>
+                        <h4 className="font-display font-bold text-white text-sm">Your Personal Booking Helper</h4>
+                        <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                          I can research ticket prices on live platforms, compare luggage rules, find cheapest dates, or verify PNR status.
+                        </p>
+                      </div>
+
+                      <div className="w-full space-y-1.5 text-left pt-2">
+                        <button
+                          onClick={() => handleSendAiMessage(`Which platform is best for booking flights from ${origin} to ${destination}?`)}
+                          className="w-full text-left p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 border border-slate-800 transition-colors"
+                        >
+                          ✈️ Best flight platforms for {origin} ➔ {destination}?
+                        </button>
+                        <button
+                          onClick={() => handleSendAiMessage(`Check PNR 4521369874 status and official live links`)}
+                          className="w-full text-left p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 border border-slate-800 transition-colors"
+                        >
+                          🚆 How to verify Indian Railways PNR 4521369874?
+                        </button>
+                        <button
+                          onClick={() => handleSendAiMessage(`Browse top travel guidelines and seasonal weather for ${destination}`)}
+                          className="w-full text-left p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs text-slate-300 border border-slate-800 transition-colors"
+                        >
+                          🌐 Travel tips and weather in {destination}?
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {messages.map((m, idx) => (
+                        <MessageBubble key={idx} msg={m} />
+                      ))}
+
+                      {loadingAi && (
+                        <div className="flex items-start space-x-2.5 my-3">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
+                            <Icons.Bot />
+                          </div>
+                          <div className="glass-card px-3.5 py-2.5 rounded-2xl rounded-tl-none border border-slate-700/60 flex items-center space-x-2 text-xs text-slate-300">
+                            <div className="flex space-x-1">
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce"></div>
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                            </div>
+                            <span>Reasoning with LangGraph skills...</span>
+                          </div>
+                        </div>
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Input Box */}
+                <div className="p-3 border-t border-slate-800 bg-slate-950/80">
                   <div className="flex items-center space-x-2">
-                    <textarea
-                      rows="2"
+                    <input
+                      type="text"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Ask the agent to browse travel info, book tickets (flights, trains, events), or check status..."
-                      className="flex-1 bg-slate-900/90 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none transition-all"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendAiMessage();
+                        }
+                      }}
+                      placeholder="Ask AI helper to compare, verify PNR, or research..."
+                      className="flex-1 bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                     />
                     <button
-                      onClick={() => handleSendMessage()}
-                      disabled={loading || !input.trim()}
-                      className={`h-11 px-5 rounded-xl flex items-center justify-center transition-all font-medium text-sm ${
-                        loading || !input.trim()
-                          ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                          : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-600/30 active:scale-95"
-                      }`}
+                      onClick={() => handleSendAiMessage()}
+                      disabled={loadingAi || !input.trim()}
+                      className="h-9 px-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-xs shadow transition-all disabled:opacity-50"
                     >
                       <Icons.Send />
                     </button>
                   </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-                    <span>Press <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Enter</kbd> to send, <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Shift+Enter</kbd> for newline</span>
-                    <span className="flex items-center space-x-1">
-                      <Icons.ShieldCheck />
-                      <span>Backend-Secured Auth</span>
-                    </span>
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1.5 px-1">
+                    <span>Press Enter to send</span>
+                    <span className="font-mono text-indigo-400">thread={threadId}</span>
                   </div>
                 </div>
-              </div>
-            </main>
+              </aside>
+            )}
           </div>
 
-          {/* Bookings Modal Drawer */}
-          <BookingsDrawer
-            isOpen={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            bookings={bookings}
-            onInquireBooking={(id) => handleSendMessage(`Please check the status of ticket reservation ${id}`)}
+          {/* Floating AI Helper Button (When drawer is closed) */}
+          {!aiDrawerOpen && (
+            <button
+              onClick={() => setAiDrawerOpen(true)}
+              className="fixed bottom-6 right-6 z-40 flex items-center space-x-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 text-white font-semibold text-xs shadow-2xl shadow-indigo-600/50 hover:scale-105 active:scale-95 transition-all glow-indigo"
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+              <Icons.Sparkles />
+              <span>AI Co-Pilot Helper</span>
+            </button>
+          )}
+
+          {/* Modal */}
+          <RegisterBookingModal
+            isOpen={registerModalOpen}
+            onClose={() => setRegisterModalOpen(false)}
+            initialData={modalInitialData}
+            authToken={authToken}
+            onBookingSaved={() => {
+              fetchBookings(authToken);
+              setMainView('bookings');
+            }}
+          />
+          <AuthModal
+            isOpen={authModalOpen}
+            onClose={() => setAuthModalOpen(false)}
+            onAuthSuccess={handleAuthSuccess}
+            initialMode={authMode}
           />
         </div>
       );
     }
 
-    // Render the React application
+    // Render React app to DOM
     const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(<App />);
+  </script>
+
+  <!-- Service Worker Registration for PWA / Android Trusted Web Activity -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((reg) => console.log('[PWA] Service Worker registered with scope:', reg.scope))
+          .catch((err) => console.warn('[PWA] Service Worker registration failed:', err));
+      });
+    }
   </script>
 </body>
 </html>

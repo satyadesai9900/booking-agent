@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MantaBooking</string>
+    <string name="app_url">https://mantabooking.onrender.com</string>
+    <string name="dev_url">http://10.0.2.2:5000</string>
+</resources>

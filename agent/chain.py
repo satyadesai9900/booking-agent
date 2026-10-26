@@ -4,6 +4,7 @@ Combines the Model and Parser in an LCEL pipeline (model | parser).
 Allows switching the active LLM with just a single line of code.
 """
 
+from langsmith import traceable
 import os
 from typing import Optional, Any, List
 from langchain_core.messages import AIMessage, BaseMessage
@@ -12,13 +13,50 @@ from langchain_core.runnables import Runnable, RunnableSequence
 
 from env.config import config, get_gemini_api_key
 from agent.skills import TOOLS
-
+os.environ['agent_project']='booking_agent'
 # ==============================================================================
-# 🎯 CHANGE YOUR LLM WITH JUST THIS SINGLE LINE OF CODE:
+# 🎯 CHANGE YOUR LLM WITH JUST THIS SINGLE LINE OF CODE (or set LLM_PROVIDER / ACTIVE_LLM in env):
 # Supported options: "gemini" | "openai" | "anthropic" | "groq" | "ollama" | "deepseek"
 # ==============================================================================
-ACTIVE_LLM: str = "groq"
+ACTIVE_LLM: str = (os.getenv("LLM_PROVIDER") or os.getenv("ACTIVE_LLM") or "groq").lower().strip()
 # ==============================================================================
+
+# Default model per provider (each overridable via its <PROVIDER>_MODEL env var)
+DEFAULT_MODELS = {
+    "gemini": "gemini-3.8-flash",
+    "openai": "gpt-4o",
+    "anthropic": "claude-sonnet-5-5",
+    "groq": "openai/gpt-oss-120b",
+    "ollama": "llama3.2",
+    "deepseek": "deepseek-chat",
+}
+
+# Env var holding each provider's API key (ollama runs locally without one)
+API_KEY_ENV_VARS = {
+    "gemini": "GEMINI_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+    "groq": "GROQ_API_KEY",
+    "deepseek": "DEEPSEEK_API_KEY",
+}
+
+
+def get_model_name(provider: Optional[str] = None) -> str:
+    """Model name the given (or active) provider will use."""
+    selected = (provider or ACTIVE_LLM).lower().strip()
+    if selected == "gemini":
+        return config.gemini_model or DEFAULT_MODELS["gemini"]
+    return os.getenv(f"{selected.upper()}_MODEL") or DEFAULT_MODELS.get(selected, "")
+
+
+def is_api_key_configured(provider: Optional[str] = None) -> bool:
+    """Whether the provider's API key is set to a real (non-placeholder) value."""
+    selected = (provider or ACTIVE_LLM).lower().strip()
+    env_var = API_KEY_ENV_VARS.get(selected)
+    if env_var is None:
+        return True
+    value = os.getenv(env_var, "").strip()
+    return bool(value) and not value.startswith("your_")
 
 
 class AgentOutputParser(Runnable):
@@ -53,7 +91,7 @@ def get_model(
 
     if selected_provider == "gemini":
         key = api_key or get_gemini_api_key()
-        name = model_name or config.gemini_model or "gemini-3.8-flash"
+        name = model_name or get_model_name("gemini")
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             return ChatGoogleGenerativeAI(
@@ -73,7 +111,7 @@ def get_model(
     elif selected_provider == "openai":
         from langchain_openai import ChatOpenAI
         key = api_key or os.getenv("OPENAI_API_KEY", "")
-        name = model_name or os.getenv("OPENAI_MODEL", "gpt-4o")
+        name = model_name or get_model_name("openai")
         return ChatOpenAI(
             model=name,
             api_key=key,
@@ -84,7 +122,7 @@ def get_model(
         try:
             from langchain_anthropic import ChatAnthropic
             key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
-            name = model_name or "claude-3-5-sonnet-latest"
+            name = model_name or get_model_name("anthropic")
             return ChatAnthropic(
                 model_name=name,
                 api_key=key,
@@ -104,7 +142,7 @@ def get_model(
     elif selected_provider == "groq":
         from langchain_openai import ChatOpenAI
         key = api_key or os.getenv("GROQ_API_KEY", "")
-        name = model_name or os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+        name = model_name or get_model_name("groq")
         return ChatOpenAI(
             model=name,
             api_key=key,
@@ -114,7 +152,7 @@ def get_model(
 
     elif selected_provider == "ollama":
         from langchain_openai import ChatOpenAI
-        name = model_name or os.getenv("OLLAMA_MODEL", "llama3.2")
+        name = model_name or get_model_name("ollama")
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
         return ChatOpenAI(
             model=name,
@@ -126,7 +164,7 @@ def get_model(
     elif selected_provider == "deepseek":
         from langchain_openai import ChatOpenAI
         key = api_key or os.getenv("DEEPSEEK_API_KEY", "")
-        name = model_name or "deepseek-chat"
+        name = model_name or get_model_name("deepseek")
         return ChatOpenAI(
             model=name,
             api_key=key,
@@ -174,6 +212,9 @@ text_parser = StrOutputParser()
 
 __all__ = [
     "ACTIVE_LLM",
+    "DEFAULT_MODELS",
+    "get_model_name",
+    "is_api_key_configured",
     "AgentOutputParser",
     "StrOutputParser",
     "get_model",

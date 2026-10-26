@@ -2,14 +2,20 @@ import React, { useState } from 'react';
 
 export default function ToolExecutionCard({ toolEvent }) {
   const [expanded, setExpanded] = useState(false);
+  const isPlatform = toolEvent.tool === "get_booking_platforms";
   const isBooking = toolEvent.tool === "book_ticket";
   const isBrowsing = toolEvent.tool === "browse_web";
   const isStatus = toolEvent.tool === "check_ticket_status";
+  const isEmail = toolEvent.tool === "send_booking_email" || toolEvent.tool === "send_email";
 
-  const badgeColor = isBooking 
+  const badgeColor = isPlatform
+    ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+    : isBooking 
     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
     : isBrowsing 
     ? "bg-sky-500/10 text-sky-400 border-sky-500/30"
+    : isEmail
+    ? "bg-purple-500/10 text-purple-300 border-purple-500/30"
     : "bg-amber-500/10 text-amber-400 border-amber-500/30";
 
   return (
@@ -32,10 +38,16 @@ export default function ToolExecutionCard({ toolEvent }) {
       {/* Quick summary of arguments */}
       {toolEvent.args && (
         <div className="mt-2 text-slate-300 font-mono text-[11px] bg-slate-950/70 p-2 rounded-lg overflow-x-auto">
+          {isPlatform && (
+            <div>
+              <span className="text-cyan-400 font-semibold">Platforms for {toolEvent.args.category?.toUpperCase()}: </span>
+              {toolEvent.args.origin && toolEvent.args.destination ? `${toolEvent.args.origin} ➔ ${toolEvent.args.destination}` : 'General options'} {toolEvent.args.date ? `(${toolEvent.args.date})` : ''}
+            </div>
+          )}
           {isBooking && (
             <div>
               <span className="text-emerald-400 font-semibold">{toolEvent.args.category?.toUpperCase()}: </span>
-              {toolEvent.args.origin} ➔ {toolEvent.args.destination} ({toolEvent.args.date}) | Class: {toolEvent.args.ticket_class || 'Economy'}
+              {toolEvent.args.origin} ➔ {toolEvent.args.destination} ({toolEvent.args.date}) | Platform: {toolEvent.args.platform || 'Selected'} | Class: {toolEvent.args.ticket_class || 'Economy'}
             </div>
           )}
           {isBrowsing && (
@@ -48,6 +60,18 @@ export default function ToolExecutionCard({ toolEvent }) {
             <div>
               <span className="text-amber-400 font-semibold">PNR: </span>
               {toolEvent.args.booking_id}
+            </div>
+          )}
+          {isEmail && (
+            <div>
+              <span className="text-purple-400 font-semibold">📧 To: </span>
+              {toolEvent.args.recipient_email}
+              {toolEvent.args.booking_id && (
+                <span className="text-slate-400 ml-2">| PNR: <span className="text-indigo-300">{toolEvent.args.booking_id}</span></span>
+              )}
+              {toolEvent.args.subject && (
+                <div className="text-slate-400 text-[10px] mt-0.5 truncate">Subject: {toolEvent.args.subject}</div>
+              )}
             </div>
           )}
         </div>

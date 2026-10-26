@@ -14,7 +14,6 @@ venv/
 # Python cache & compiled files
 __pycache__/
 */__pycache__/
-** roll-up
 *.py[cod]
 *$py.class
 
@@ -32,3 +31,9 @@ frontend/dist/
 Thumbs.db
 desktop.ini
 *.log
+
+# Local SQLite data (bookings, users, sessions, chat checkpoints)
+data/
+*.db
+*.db-wal
+*.db-shm

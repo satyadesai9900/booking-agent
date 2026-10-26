@@ -34,11 +34,20 @@ class Settings:
     default_thread_id: str = os.getenv("DEFAULT_THREAD_ID", "1")
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
     temperature: float = float(os.getenv("TEMPERATURE", "0.3"))
+    # Gmail SMTP settings
+    gmail_sender_email: str = os.getenv("GMAIL_SENDER_EMAIL", os.getenv("GMAIL_USER", ""))
+    gmail_app_password: str = os.getenv("GMAIL_APP_PASSWORD", os.getenv("GMAIL_PASS", ""))
+    smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
 
 
 config = Settings()
 
 
+from langsmith import traceable
+
+
+@traceable(name="get_gemini_api_key")
 def get_gemini_api_key() -> str:
     """Retrieve Gemini API key from environment, config, or user prompt."""
     env_key = os.getenv("GEMINI_API_KEY")
@@ -47,6 +56,10 @@ def get_gemini_api_key() -> str:
 
     if config.gemini_api_key and config.gemini_api_key.strip() and config.gemini_api_key != "your_gemini_api_key_here":
         return config.gemini_api_key.strip()
+
+    # Never block on input() (or sys.exit) inside a server process
+    if not sys.stdin or not sys.stdin.isatty():
+        raise RuntimeError("GEMINI_API_KEY is not configured. Set it in env/.env or the environment.")
 
     print("\n" + "=" * 60)
     print(" GEMINI API KEY REQUIRED")

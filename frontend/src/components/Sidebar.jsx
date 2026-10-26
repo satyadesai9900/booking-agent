@@ -55,6 +55,18 @@ export default function Sidebar({ threadId, onResetThread, onSendPrompt }) {
                 </div>
               </div>
             </div>
+
+            <div className="p-2.5 rounded-xl glass-card flex items-start space-x-3">
+              <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 mt-0.5">
+                <Icons.Mail />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-slate-200">send_booking_email</div>
+                <div className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                  Gmail confirmation delivery to passenger inbox
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -65,10 +77,10 @@ export default function Sidebar({ threadId, onResetThread, onSendPrompt }) {
           </h2>
           <div className="space-y-1.5">
             <button
-              onClick={() => onSendPrompt("Book a flight from New York (JFK) to London (LHR) on 2026-11-20 for Alex Morgan, Business Class")}
+              onClick={() => onSendPrompt("Book a flight from New York (JFK) to London (LHR) on 2026-11-20 for Alex Morgan, Business Class, and email confirmation to alex.morgan@gmail.com")}
               className="w-full text-left p-2 rounded-lg text-xs text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-700/50 truncate"
             >
-              ✈️ Book JFK ➔ LHR Flight
+              📧 Book JFK ➔ LHR & Email Itinerary
             </button>
             <button
               onClick={() => onSendPrompt("Book 2 train tickets from Paris to Lyon for tomorrow for Sophie Martin and Lucas Bernard")}

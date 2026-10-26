@@ -4,16 +4,18 @@ import { Icons } from './Icons';
 export default function TicketConfirmationCard({ text }) {
   const [copied, setCopied] = useState(false);
   
-  // Match booking ID format: FL-XXXX, TR-XXXX, BS-XXXX, MV-XXXX, EV-XXXX, BK-XXXX
-  const idMatch = text.match(/Booking ID:\s*([A-Z]{2}-[A-Za-z0-9]+)/i);
+  // Match booking ID format: AGT-XX-XXXX, FL-XXXX, 10-digit IRCTC, or 6-char Airline PNR
+  const idMatch = text.match(/(?:Official Carrier PNR|Booking ID|Reference|PNR):\s*([A-Za-z0-9\-]+)/i);
   if (!idMatch) return null;
 
   const bookingId = idMatch[1];
+  const isOfficial = text.includes("Official Carrier PNR") || /^\d{10}$/.test(bookingId);
+  const platformMatch = text.match(/Platform:\s*([^\n\r]+)/i);
   const categoryMatch = text.match(/Category:\s*([A-Za-z]+)/i);
   const routeMatch = text.match(/Route \/ Event:\s*([^\n\r]+)/i);
   const dateMatch = text.match(/Date:\s*([^\n\r]+)/i);
   const classMatch = text.match(/Class:\s*([^\n\r]+)/i);
-  const costMatch = text.match(/Total Cost:\s*(\$[0-9\.]+)/i);
+  const costMatch = text.match(/(?:Total Cost|Estimated Fare):\s*(\$[0-9\.]+)/i);
 
   const copyId = () => {
     navigator.clipboard.writeText(bookingId);
@@ -29,7 +31,7 @@ export default function TicketConfirmationCard({ text }) {
             <Icons.Ticket />
           </div>
           <span className="font-display font-bold text-white text-sm tracking-wide">
-            Confirmed Ticket Reservation
+            {isOfficial ? "Official Ticket Reservation" : "Ticket Itinerary Draft"}
           </span>
         </div>
         <div className="flex items-center space-x-1.5">
@@ -46,7 +48,11 @@ export default function TicketConfirmationCard({ text }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 py-3 text-xs">
+        <div>
+          <div className="text-[10px] uppercase font-semibold text-slate-400">Platform</div>
+          <div className="font-semibold text-indigo-300 truncate">{platformMatch ? platformMatch[1] : 'Selected Platform'}</div>
+        </div>
         <div>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Category</div>
           <div className="font-semibold text-slate-100">{categoryMatch ? categoryMatch[1] : 'Travel'}</div>
@@ -57,7 +63,7 @@ export default function TicketConfirmationCard({ text }) {
         </div>
         <div>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Class</div>
-          <div className="font-semibold text-indigo-300">{classMatch ? classMatch[1] : 'Economy'}</div>
+          <div className="font-semibold text-slate-200">{classMatch ? classMatch[1] : 'Economy'}</div>
         </div>
         <div>
           <div className="text-[10px] uppercase font-semibold text-slate-400">Total Paid</div>
